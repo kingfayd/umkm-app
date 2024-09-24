@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Procurement {
+  id           Int                     @id @default(autoincrement())
+  itemName     String
+  quantity     Int
+  unitPrice    Float
+  totalPrice   Float                  // Ini bisa dihitung di backend
+  supplierName String
+  purchaseDate DateTime
+  productions  ProductionProcurement[] // Relasi ke tabel join
+}
+
+model Production {
+  id               Int                     @id @default(autoincrement())
+  productName      String
+  productionDate   DateTime
+  productionQuantity Int                    @default(0) // Set default value
+  quantity           Int
+  items            ProductionProcurement[] // Relasi ke tabel join
+}
+
+model ProductionProcurement {
+  id             Int         @id @default(autoincrement())
+  productionId   Int
+  procurementId  Int
+  quantity       Int         // Menyimpan jumlah bahan yang digunakan
+  production     Production   @relation(fields: [productionId], references: [id], onDelete: Cascade)
+  procurement    Procurement  @relation(fields: [procurementId], references: [id], onDelete: Cascade)
+
+  @@unique([productionId, procurementId]) // Menjamin tidak ada duplikasi relasi
+}
+
+// Model pengguna
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  @@map("user") // Sesuaikan nama tabel jika perlu
+}
