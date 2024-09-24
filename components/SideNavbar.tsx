@@ -3,24 +3,18 @@
 
 import { useState } from "react";
 import { Nav } from "./ui/nav";
-
-type Props = {};
-
 import {
-  ShoppingCart,
   HandPlatter,
   ShoppingBasket,
   CircleDollarSign,
   LayoutDashboard,
   UsersRound,
-  Settings,
   ChevronRight,
 } from "lucide-react";
 import { Button } from "./ui/button";
-
 import { useWindowWidth } from "@react-hook/window-size";
 
-export default function SideNavbar({}: Props) {
+const SideNavbar: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const onlyWidth = useWindowWidth();
@@ -31,13 +25,13 @@ export default function SideNavbar({}: Props) {
   }
 
   return (
-    <div className="relative min-w-[80px] border-r px-3  pb-10 pt-24 ">
+    <div className="relative min-w-[80px] border-r px-3 pb-10 pt-24 ">
       {!mobileWidth && (
         <div className="absolute right-[-20px] top-7">
           <Button
             onClick={toggleSidebar}
             variant="secondary"
-            className=" rounded-full p-2"
+            className="rounded-full p-2"
           >
             <ChevronRight />
           </Button>
@@ -80,4 +74,6 @@ export default function SideNavbar({}: Props) {
       />
     </div>
   );
-}
+};
+
+export default SideNavbar;
