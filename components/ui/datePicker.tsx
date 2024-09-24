@@ -5,10 +5,14 @@ import React from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Controller, Control } from "react-hook-form";
-import Input from "@/components/ui/input"; // Sesuaikan import dengan lokasi Input component-mu
+
+// Definisikan tipe data yang sesuai untuk form Anda
+interface FormData {
+  [key: string]: any; // Ganti any dengan tipe yang lebih spesifik jika perlu
+}
 
 interface Props {
-  control: Control<any>; // Ganti any dengan tipe data form yang sesuai jika perlu
+  control: Control<FormData>; // Menggunakan FormData di sini
   name: string;
   label: string;
   error?: { message?: string };
