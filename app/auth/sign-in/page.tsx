@@ -3,11 +3,14 @@ import Link from "next/link";
 
 const SignInPage = () => {
   return (
-    <div className="container">
-      <h1>Sign In</h1>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Masuk</h1>
       <SignInForm />
-      <p>
-        Don't have an account? <Link href="/auth/sign-up">Sign Up</Link>
+      <p className="mt-4">
+        Don&apos;t have an account?{" "}
+        <Link href="/auth/sign-up" className="text-blue-500 underline">
+          Daftar
+        </Link>
       </p>
     </div>
   );
