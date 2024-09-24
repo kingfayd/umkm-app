@@ -8,7 +8,8 @@ import { Controller, Control } from "react-hook-form";
 
 // Definisikan tipe data yang sesuai untuk form Anda
 interface FormData {
-  [key: string]: any; // Ganti any dengan tipe yang lebih spesifik jika perlu
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any; // Menggunakan any di sini
 }
 
 interface Props {
