@@ -11,31 +11,29 @@ import {
   TableCaption,
 } from "./ui/table";
 
-interface ProcurementItem {
+interface ProductionItem {
   id: number;
-  itemName: string;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  supplierName: string; // Tambahkan field supplierName
-  purchaseDate: string; // Tambahkan field purchaseDate
+  productName: string;
+  productionDate: string;
+  productionQuantity: number; // Menambahkan properti untuk jumlah produksi
+  items: { itemName: string; quantity: number }[]; // Menyimpan item dengan jumlah
 }
 
-const ProcurementTable = () => {
-  const [data, setData] = useState<ProcurementItem[]>([]);
+const ProductionTable = () => {
+  const [data, setData] = useState<ProductionItem[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("/api/procurement");
+        const response = await fetch("/api/production"); // Ganti dengan API yang sesuai
         if (response.ok) {
-          const result: ProcurementItem[] = await response.json();
+          const result: ProductionItem[] = await response.json();
           setData(result);
         } else {
-          console.error("Failed to fetch procurement data.");
+          console.error("Failed to fetch production data.");
         }
       } catch (error) {
-        console.error("Error fetching procurement data:", error);
+        console.error("Error fetching production data:", error);
       }
     };
 
@@ -44,28 +42,30 @@ const ProcurementTable = () => {
 
   return (
     <Table>
-      <TableCaption>Daftar Pengadaan</TableCaption>
+      <TableCaption>Daftar Produksi</TableCaption>
       <TableHeader>
         <TableRow>
+          <TableHead>Nama Produk</TableHead>
           <TableHead>Bahan</TableHead>
-          <TableHead>Jumlah</TableHead>
-          <TableHead>Harga Satuan</TableHead>
-          <TableHead>Total Harga</TableHead>
-          <TableHead>Supplier</TableHead>
-          <TableHead>Tanggal Pembelian</TableHead>
+          <TableHead>Tanggal Produksi</TableHead>
+          <TableHead>Jumlah Produksi</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {data.map((item) => (
           <TableRow key={item.id}>
-            <TableCell>{item.itemName}</TableCell>
-            <TableCell>{item.quantity}</TableCell>
-            <TableCell>{item.unitPrice}</TableCell>
-            <TableCell>{item.totalPrice}</TableCell>
-            <TableCell>{item.supplierName}</TableCell>
+            <TableCell>{item.productName}</TableCell>
             <TableCell>
-              {new Date(item.purchaseDate).toLocaleDateString()}
+              {item.items.map(({ itemName, quantity }) => (
+                <div key={itemName}>
+                  {itemName}({quantity}){/* Menampilkan jumlah setiap bahan */}
+                </div>
+              ))}
             </TableCell>
+            <TableCell>
+              {new Date(item.productionDate).toLocaleDateString()}
+            </TableCell>
+            <TableCell>{item.productionQuantity}</TableCell>
           </TableRow>
         ))}
       </TableBody>
@@ -73,4 +73,4 @@ const ProcurementTable = () => {
   );
 };
 
-export default ProcurementTable;
+export default ProductionTable;
