@@ -17,8 +17,8 @@ interface ProcurementItem {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
-  supplierName: string; // Tambahkan field supplierName
-  purchaseDate: string; // Tambahkan field purchaseDate
+  supplierName: string;
+  purchaseDate: string;
 }
 
 const ProcurementTable = () => {
@@ -43,33 +43,39 @@ const ProcurementTable = () => {
   }, []);
 
   return (
-    <Table>
-      <TableCaption>Daftar Pengadaan</TableCaption>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Bahan</TableHead>
-          <TableHead>Jumlah</TableHead>
-          <TableHead>Harga Satuan</TableHead>
-          <TableHead>Total Harga</TableHead>
-          <TableHead>Supplier</TableHead>
-          <TableHead>Tanggal Pembelian</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {data.map((item) => (
-          <TableRow key={item.id}>
-            <TableCell>{item.itemName}</TableCell>
-            <TableCell>{item.quantity}</TableCell>
-            <TableCell>{item.unitPrice}</TableCell>
-            <TableCell>{item.totalPrice}</TableCell>
-            <TableCell>{item.supplierName}</TableCell>
-            <TableCell>
-              {new Date(item.purchaseDate).toLocaleDateString()}
-            </TableCell>
+    <div className="overflow-x-auto">
+      {" "}
+      {/* Allow horizontal scrolling */}
+      <Table className="min-w-full">
+        {" "}
+        {/* Ensure table takes full width */}
+        <TableCaption>Daftar Pengadaan</TableCaption>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Bahan</TableHead>
+            <TableHead>Jumlah</TableHead>
+            <TableHead>Harga Satuan</TableHead>
+            <TableHead>Total Harga</TableHead>
+            <TableHead>Supplier</TableHead>
+            <TableHead>Tanggal Pembelian</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {data.map((item) => (
+            <TableRow key={item.id}>
+              <TableCell>{item.itemName}</TableCell>
+              <TableCell>{item.quantity}</TableCell>
+              <TableCell>{item.unitPrice}</TableCell>
+              <TableCell>{item.totalPrice}</TableCell>
+              <TableCell>{item.supplierName}</TableCell>
+              <TableCell>
+                {new Date(item.purchaseDate).toLocaleDateString()}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 
