@@ -25,7 +25,7 @@ const ProductionTable = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("/api/production"); // Ganti dengan API yang sesuai
+        const response = await fetch("/api/production"); // API yang sesuai
         if (response.ok) {
           const result: ProductionItem[] = await response.json();
           setData(result);
@@ -58,12 +58,14 @@ const ProductionTable = () => {
             <TableCell>
               {item.items.map(({ itemName, quantity }) => (
                 <div key={itemName}>
-                  {itemName}({quantity}){/* Menampilkan jumlah setiap bahan */}
+                  {itemName} ({quantity}){" "}
+                  {/* Menampilkan jumlah setiap bahan */}
                 </div>
               ))}
             </TableCell>
             <TableCell>
-              {new Date(item.productionDate).toLocaleDateString()}
+              {new Date(item.productionDate).toLocaleDateString()}{" "}
+              {/* Format tanggal */}
             </TableCell>
             <TableCell>{item.productionQuantity}</TableCell>
           </TableRow>

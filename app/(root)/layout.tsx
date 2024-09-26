@@ -29,7 +29,7 @@ export default function RootLayout({
         {/* Sidebar */}
         <SideNavbar />
         {/* Main content */}
-        <div className="p-8 w-full">{children}</div>
+        <main className="p-8 w-full">{children}</main>
       </body>
     </html>
   );

@@ -1,11 +1,22 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+// app/api/procurement/route.ts
+import { supabase } from "../../../lib/supabaseClient";
 
 // Handle GET request to fetch procurement data
 export async function GET() {
   try {
-    const procurements = await prisma.procurement.findMany(); // Fetch all procurements
+    // Fetch all procurements from Supabase
+    const { data: procurements, error } = await supabase
+      .from("procurements")
+      .select("*");
+
+    if (error) {
+      console.error(error);
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify(procurements), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -42,17 +53,28 @@ export async function POST(req: Request) {
     // Hitung totalPrice
     const totalPrice = quantity * unitPrice;
 
-    // Simpan data ke database
-    const procurement = await prisma.procurement.create({
-      data: {
-        itemName,
-        quantity,
-        unitPrice,
-        totalPrice,
-        supplierName,
-        purchaseDate: parsedPurchaseDate,
-      },
-    });
+    // Insert data ke tabel procurements di Supabase
+    const { data: procurement, error } = await supabase
+      .from("procurements")
+      .insert([
+        {
+          item_name: itemName, // Periksa nama kolom di Supabase
+          quantity: quantity,
+          unit_price: unitPrice,
+          total_price: totalPrice,
+          supplier_name: supplierName,
+          purchase_date: parsedPurchaseDate.toISOString(),
+        },
+      ])
+      .single();
+
+    if (error) {
+      console.error(error);
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(JSON.stringify(procurement), {
       status: 200,

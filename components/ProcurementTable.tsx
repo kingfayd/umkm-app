@@ -23,32 +23,48 @@ interface ProcurementItem {
 
 const ProcurementTable = () => {
   const [data, setData] = useState<ProcurementItem[]>([]);
+  const [loading, setLoading] = useState(true); // State untuk loading
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch("/api/procurement");
         if (response.ok) {
-          const result: ProcurementItem[] = await response.json();
-          setData(result);
+          const result = await response.json();
+
+          // Format data sesuai dengan interface ProcurementItem
+          const formattedData = result.map((item: any) => ({
+            id: item.id,
+            itemName: item.item_name, // Ubah sesuai dengan nama kolom di Supabase
+            quantity: item.quantity,
+            unitPrice: item.unit_price, // Ubah sesuai dengan nama kolom di Supabase
+            totalPrice: item.total_price, // Ubah sesuai dengan nama kolom di Supabase
+            supplierName: item.supplier_name, // Ubah sesuai dengan nama kolom di Supabase
+            purchaseDate: item.purchase_date, // Ubah sesuai dengan nama kolom di Supabase
+          }));
+
+          setData(formattedData);
         } else {
           console.error("Failed to fetch procurement data.");
         }
       } catch (error) {
         console.error("Error fetching procurement data:", error);
+      } finally {
+        setLoading(false); // Set loading ke false setelah fetch selesai
       }
     };
 
     fetchData();
   }, []);
 
+  // Tampilkan loading jika data masih dalam proses fetching
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="overflow-x-auto">
-      {" "}
-      {/* Allow horizontal scrolling */}
       <Table className="min-w-full">
-        {" "}
-        {/* Ensure table takes full width */}
         <TableCaption>Daftar Pengadaan</TableCaption>
         <TableHeader>
           <TableRow>
