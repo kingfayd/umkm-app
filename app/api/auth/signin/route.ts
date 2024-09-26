@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import bcrypt from "bcryptjs";
-import prisma from "@/lib/prisma";
 import { generateToken } from "@/lib/jwt";
+
+// Inisialisasi Supabase Client
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_ANON_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(req: Request) {
   try {
@@ -14,9 +19,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    // Mengambil pengguna berdasarkan email
+    const { data: user, error } = await supabase
+      .from("users") // Ganti dengan nama tabel yang sesuai
+      .select("*")
+      .eq("email", email)
+      .single();
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (error || !user || !(await bcrypt.compare(password, user.password))) {
       return NextResponse.json(
         { message: "Invalid email or password" },
         { status: 401 }
