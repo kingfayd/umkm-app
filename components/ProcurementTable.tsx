@@ -30,17 +30,17 @@ const ProcurementTable = () => {
       try {
         const response = await fetch("/api/procurement");
         if (response.ok) {
-          const result = await response.json();
+          const result: ProcurementItem[] = await response.json(); // Ganti any dengan ProcurementItem[]
 
           // Format data sesuai dengan interface ProcurementItem
-          const formattedData: ProcurementItem[] = result.map((item: any) => ({
+          const formattedData: ProcurementItem[] = result.map((item) => ({
             id: item.id,
-            itemName: item.item_name, // Menggunakan nama yang dikembalikan dari API
+            itemName: item.itemName, // Sesuaikan nama properti dengan yang ada di API
             quantity: item.quantity,
-            unitPrice: item.unit_price, // Menggunakan nama yang dikembalikan dari API
-            totalPrice: item.total_price, // Menggunakan nama yang dikembalikan dari API
-            supplierName: item.supplier_name, // Menggunakan nama yang dikembalikan dari API
-            purchaseDate: item.purchase_date, // Menggunakan nama yang dikembalikan dari API
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice,
+            supplierName: item.supplierName,
+            purchaseDate: item.purchaseDate,
           }));
 
           setData(formattedData);
