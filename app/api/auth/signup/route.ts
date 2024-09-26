@@ -3,8 +3,8 @@ import bcrypt from "bcryptjs";
 import { createClient } from "@supabase/supabase-js";
 
 // Inisialisasi Supabase Client
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL; // Pastikan variabel ini didefinisikan di .env
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY; // Pastikan variabel ini didefinisikan di .env
 
 if (!supabaseUrl || !supabaseKey) {
   throw new Error("Supabase URL and Key must be provided");
@@ -12,10 +12,12 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export async function POST(req: Request) {
+export async function POST(req: Request): Promise<NextResponse> {
+  // Menambahkan tipe pada parameter dan return type
   try {
     const { username, email, password } = await req.json();
 
+    // Validasi input
     if (!username || !email || !password) {
       return NextResponse.json(
         { message: "All fields are required" },
@@ -31,6 +33,7 @@ export async function POST(req: Request) {
       .single();
 
     if (existingUserError && existingUserError.code !== "PGRST204") {
+      // PGRST204 berarti tidak ada hasil ditemukan
       return NextResponse.json(
         { message: "Internal server error while checking existing user" },
         { status: 500 }
@@ -56,17 +59,20 @@ export async function POST(req: Request) {
           email,
           password: hashedPassword,
         },
-      ])
-      .single();
+      ]);
 
     if (createUserError) {
       return NextResponse.json(
-        { message: "Error creating user" },
+        { message: "Error creating user", error: createUserError.message },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(user, { status: 201 });
+    // Mengembalikan informasi pengguna yang baru dibuat
+    return NextResponse.json(
+      { message: "User created successfully", user },
+      { status: 201 }
+    );
   } catch (error) {
     console.error(error);
     return NextResponse.json(
