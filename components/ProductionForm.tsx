@@ -7,7 +7,7 @@ import Input from "@/components/ui/input";
 
 interface ProcurementItem {
   id: number;
-  itemName: string;
+  item_name: string; // Menggunakan item_name
   quantity: number;
 }
 
@@ -15,7 +15,7 @@ interface FormValues {
   productName: string;
   productionDate: Date;
   productionQuantity: number; // Tambahkan field untuk jumlah produksi
-  items: { id: number; itemName: string; quantity: number }[];
+  items: { id: number; item_name: string; quantity: number }[]; // Menggunakan item_name
 }
 
 export default function ProductionForm() {
@@ -60,7 +60,7 @@ export default function ProductionForm() {
     // Tambahkan id ke setiap item
     const itemsWithId = data.items.map((item) => {
       const selectedProcurementItem = procurementItems.find(
-        (procItem) => procItem.itemName === item.itemName
+        (procItem) => procItem.item_name === item.item_name // Menggunakan item_name
       );
       return {
         ...item,
@@ -146,21 +146,23 @@ export default function ProductionForm() {
         <div key={field.id} className="flex gap-4 items-center">
           <div>
             <select
-              {...register(`items.${index}.itemName`, {
+              {...register(`items.${index}.item_name`, {
+                // Menggunakan item_name
                 required: "Pilih bahan yang akan digunakan",
               })}
               className="border p-2 rounded"
             >
               <option value="">Pilih Bahan</option>
               {procurementItems.map((item) => (
-                <option key={item.id} value={item.itemName}>
-                  {item.itemName} (Stok: {item.quantity})
+                <option key={item.id} value={item.item_name}>
+                  {" "}
+                  {item.item_name} (Stok: {item.quantity})
                 </option>
               ))}
             </select>
-            {errors.items?.[index]?.itemName && (
+            {errors.items?.[index]?.item_name && ( // Menggunakan item_name
               <p className="text-red-500 text-sm">
-                {errors.items[index].itemName?.message}
+                {errors.items[index].item_name?.message}
               </p>
             )}
           </div>
@@ -196,7 +198,7 @@ export default function ProductionForm() {
 
       <Button
         type="button"
-        onClick={() => append({ id: 0, itemName: "", quantity: 0 })}
+        onClick={() => append({ id: 0, item_name: "", quantity: 0 })} // Menggunakan item_name
       >
         Tambah Bahan
       </Button>
