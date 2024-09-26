@@ -33,14 +33,14 @@ const ProcurementTable = () => {
           const result = await response.json();
 
           // Format data sesuai dengan interface ProcurementItem
-          const formattedData = result.map((item: any) => ({
+          const formattedData: ProcurementItem[] = result.map((item: any) => ({
             id: item.id,
-            itemName: item.item_name, // Ubah sesuai dengan nama kolom di Supabase
+            itemName: item.item_name, // Menggunakan nama yang dikembalikan dari API
             quantity: item.quantity,
-            unitPrice: item.unit_price, // Ubah sesuai dengan nama kolom di Supabase
-            totalPrice: item.total_price, // Ubah sesuai dengan nama kolom di Supabase
-            supplierName: item.supplier_name, // Ubah sesuai dengan nama kolom di Supabase
-            purchaseDate: item.purchase_date, // Ubah sesuai dengan nama kolom di Supabase
+            unitPrice: item.unit_price, // Menggunakan nama yang dikembalikan dari API
+            totalPrice: item.total_price, // Menggunakan nama yang dikembalikan dari API
+            supplierName: item.supplier_name, // Menggunakan nama yang dikembalikan dari API
+            purchaseDate: item.purchase_date, // Menggunakan nama yang dikembalikan dari API
           }));
 
           setData(formattedData);
