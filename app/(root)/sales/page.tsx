@@ -137,7 +137,9 @@ export default function SalesPage() {
   value={price !== null ? price : ""}
   onChange={(e) => setPrice(parseFloat(e.target.value))}
   className="w-24"
+  label="Harga Produk" // Tambahkan properti label
 />
+
 
 
           <Button onClick={handleSelectProduct}>Tambah Produk</Button>
