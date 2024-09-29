@@ -132,12 +132,13 @@ export default function SalesPage() {
           </select>
 
           <Input
-            type="number"
-            placeholder="Harga Produk"
-            value={price !== null ? price : ""}
-            onChange={(e) => setPrice(Number(e.target.value))}
-            className="w-24"
-          />
+  type="number"
+  placeholder="Harga Produk"
+  value={price !== null ? price : ""}
+  onChange={(e) => setPrice(parseFloat(e.target.value))}
+  className="w-24"
+/>
+
 
           <Button onClick={handleSelectProduct}>Tambah Produk</Button>
         </div>
