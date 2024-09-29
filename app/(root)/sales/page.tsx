@@ -1,10 +1,3 @@
-/**
- * eslint-disable @next/next/no-img-element
- *
- * @format
- */
-
-/** @format */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -96,17 +89,43 @@ export default function SalesPage() {
     );
   };
 
-  // Fungsi untuk menghitung total kuantitas produk yang dipilih
   const totalQuantity = selectedProducts.reduce(
     (total, product) => total + product.quantity,
     0
   );
 
-  // Fungsi untuk menghitung total pendapatan dari produk yang dipilih
   const totalRevenue = selectedProducts.reduce(
     (total, product) => total + product.price * product.quantity,
     0
   );
+
+  // Function to save sales data
+  const handleSaveSales = async () => {
+    if (selectedProducts.length === 0) {
+      alert("Tidak ada produk yang dipilih untuk disimpan.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/sales", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ products: selectedProducts }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to save sales data");
+      }
+
+      console.log("Sales data saved successfully");
+      setSelectedProducts([]); // Clear selected products after saving
+    } catch (error) {
+      console.error("Error saving sales data:", error);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-5 w-full">
@@ -186,6 +205,14 @@ export default function SalesPage() {
           <p>Belum ada produk yang dipilih.</p>
         )}
       </div>
+
+      <Button
+        onClick={handleSaveSales}
+        className="bg-black text-white p-2 rounded w-full mt-4"
+        disabled={selectedProducts.length === 0}
+      >
+        Simpan Penjualan
+      </Button>
 
       {/* Laporan Harian */}
       <div className="flex flex-col gap-5 mt-10">
