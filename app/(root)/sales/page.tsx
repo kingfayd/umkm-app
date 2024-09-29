@@ -22,7 +22,9 @@ interface SelectedProduct {
 
 export default function SalesPage() {
   const [products, setProducts] = useState<ProductionItem[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>(
+    []
+  );
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null);
   const [price, setPrice] = useState<number | null>(null);
 
@@ -99,7 +101,7 @@ export default function SalesPage() {
     0
   );
 
-  // Function to save sales data
+  // Function to save sales data and update stock
   const handleSaveSales = async () => {
     if (selectedProducts.length === 0) {
       alert("Tidak ada produk yang dipilih untuk disimpan.");
@@ -120,7 +122,35 @@ export default function SalesPage() {
         throw new Error(errorData.error || "Failed to save sales data");
       }
 
-      console.log("Sales data saved successfully");
+      // Update stock for each product and local product state
+      await Promise.all(
+        selectedProducts.map(async (product) => {
+          await fetch("/api/update-stock", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              productId: product.id,
+              quantity: product.quantity,
+            }),
+          });
+
+          // Update local product stock
+          setProducts((prevProducts) =>
+            prevProducts.map((p) =>
+              p.id === product.id
+                ? {
+                    ...p,
+                    productionQuantity: p.productionQuantity - product.quantity,
+                  }
+                : p
+            )
+          );
+        })
+      );
+
+      console.log("Sales data saved and stock updated successfully");
       setSelectedProducts([]); // Clear selected products after saving
     } catch (error) {
       console.error("Error saving sales data:", error);
