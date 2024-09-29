@@ -10,7 +10,7 @@
 import { useState, useEffect } from "react";
 import PageTitle from "@/components/PageTitle";
 import { Button } from "@/components/ui/button";
-import Input from "@/components/ui/input";
+import Input from "@/components/ui/input"; // Pastikan jalur ini benar
 
 // Data structure for production items
 interface ProductionItem {
@@ -29,9 +29,7 @@ interface SelectedProduct {
 
 export default function SalesPage() {
   const [products, setProducts] = useState<ProductionItem[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>(
-    []
-  );
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null);
   const [price, setPrice] = useState<number | null>(null);
 
@@ -131,31 +129,13 @@ export default function SalesPage() {
             ))}
           </select>
 
-          export default function Input({
-  type,
-  placeholder,
-  value,
-  onChange,
-  className,
-  label,
-}: InputProps) {
-  return (
-    <div className="input-container">
-      {label && <label>{label}</label>} {/* Menampilkan label hanya jika ada */}
-      <input
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        className={className}
-      />
-    </div>
-  );
-}
-
-
-
-
+          <Input
+            type="number"
+            placeholder="Harga Produk"
+            value={price !== null ? price : ""}
+            onChange={(e) => setPrice(Number(e.target.value))}
+            className="w-24"
+          />
           <Button onClick={handleSelectProduct}>Tambah Produk</Button>
         </div>
       </div>
@@ -213,6 +193,6 @@ export default function SalesPage() {
           <p>Total Pendapatan: Rp {totalRevenue.toLocaleString("id-ID")}</p>
         </div>
       </div>
-    </div>
-  );
+    </div>
+  );
 }
