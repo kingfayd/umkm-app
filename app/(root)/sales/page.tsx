@@ -10,7 +10,7 @@
 import { useState, useEffect } from "react";
 import PageTitle from "@/components/PageTitle";
 import { Button } from "@/components/ui/button";
-import Input from "@/components/ui/input"; // Ubah import ini
+import Input from "@/components/ui/input";
 
 // Data structure for production items
 interface ProductionItem {
@@ -131,6 +131,7 @@ export default function SalesPage() {
 
           <Input
             type="number"
+            label="Harga Produk"
             placeholder="Harga Produk"
             value={price !== null ? price : ""}
             onChange={(e) => setPrice(Number(e.target.value))}
@@ -152,6 +153,7 @@ export default function SalesPage() {
               <div className="flex gap-2 items-center">
                 <Input
                   type="number"
+                  label="Harga Produk"
                   placeholder="Harga Produk"
                   value={product.price}
                   onChange={(e) =>
