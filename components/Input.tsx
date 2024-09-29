@@ -1,3 +1,4 @@
+// components/ui/input.tsx
 import { ChangeEvent } from "react";
 
 interface InputProps {
@@ -6,7 +7,7 @@ interface InputProps {
   value: string | number;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   className: string;
-  label?: string; // Menjadikan label opsional
+  label?: string; // Membuat label opsional
 }
 
 export default function Input({
@@ -15,11 +16,11 @@ export default function Input({
   value,
   onChange,
   className,
-  label, // Pastikan ini opsional
+  label, // Pastikan label terima di sini
 }: InputProps) {
   return (
     <div className="input-container">
-      {label && <label>{label}</label>} {/* Menampilkan label hanya jika ada */}
+      {label && <label>{label}</label>} {/* Menampilkan label jika ada */}
       <input
         type={type}
         placeholder={placeholder}
