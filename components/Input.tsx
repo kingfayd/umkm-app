@@ -15,7 +15,7 @@ export default function Input({
   value,
   onChange,
   className,
-  label,
+  label, // Pastikan ini opsional
 }: InputProps) {
   return (
     <div className="input-container">
