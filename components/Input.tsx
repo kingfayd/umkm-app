@@ -1,18 +1,18 @@
-// components/ui/Input.tsx
+// Input.tsx
 
 import { ChangeEvent } from "react";
 
-// Definisi InputProps
+// Definisi interface InputProps di file yang sama
 interface InputProps {
   type: string;
   placeholder: string;
   value: string | number;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   className: string;
-  label?: string; // Menjadikan label opsional
+  label?: string; // Opsional
 }
 
-// Komponen Input
+// Definisi komponen Input
 export default function Input({
   type,
   placeholder,
