@@ -32,20 +32,20 @@ export default function SalesTable({
           >
             <span>{product.name}</span>
             <div className="flex gap-2 items-center">
-             <Input
-  type="number"
-  placeholder="Harga Produk"
-  value={product.price.toFixed(2)} // Menampilkan harga dengan 2 desimal
-  onChange={(e) => {
-    const price = parseFloat(e.target.value);
-    onPriceChange(
-      product.id,
-      isNaN(price) || price < 0 ? 0 : price
-    );
-  }}
-  className="w-24"
-/>
-
+              <Input
+                type="number"
+                placeholder="Harga Produk"
+                value={product.price.toFixed(2)} // Menampilkan harga dengan 2 desimal
+                onChange={(e) => {
+                  const price = parseFloat(e.target.value);
+                  onPriceChange(
+                    product.id,
+                    isNaN(price) || price < 0 ? 0 : price
+                  );
+                }}
+                className="w-24"
+                label="Harga" // Menambahkan label di sini
+              />
               <div className="flex items-center gap-2">
                 <Button
                   onClick={() => onQuantityChange(product.id, -1)}
