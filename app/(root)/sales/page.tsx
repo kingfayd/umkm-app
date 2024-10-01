@@ -91,6 +91,11 @@ export default function SalesPage() {
     );
   };
 
+  // New function to remove selected product
+  const handleRemoveProduct = (id: number) => {
+    setSelectedProducts((prev) => prev.filter((item) => item.id !== id));
+  };
+
   const totalQuantity = selectedProducts.reduce(
     (total, product) => total + product.quantity,
     0
@@ -150,6 +155,9 @@ export default function SalesPage() {
         })
       );
 
+      // Alert success message
+      alert("Sukses menyimpan data.");
+
       console.log("Sales data saved and stock updated successfully");
       setSelectedProducts([]); // Clear selected products after saving
     } catch (error) {
@@ -162,13 +170,14 @@ export default function SalesPage() {
       <PageTitle title="Penjualan" />
 
       <div className="flex flex-col gap-5">
-        <h2 className="text-xl font-bold">Pilih Produk</h2>
+        <h2 className="text-lg">Pilih Produk</h2>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-4 w-full">
+          {/* Pilih Produk */}
           <select
             value={selectedProduct || ""}
             onChange={(e) => setSelectedProduct(Number(e.target.value))}
-            className="border p-2 rounded-lg w-64"
+            className="border p-2 rounded-lg w-full"
           >
             <option value="">Pilih Produk</option>
             {products.map((product) => (
@@ -178,27 +187,33 @@ export default function SalesPage() {
             ))}
           </select>
 
+          {/* Harga Produk */}
           <Input
             type="number"
             label="Harga Produk"
             placeholder="Harga Produk"
             value={price !== null ? price : ""}
             onChange={(e) => setPrice(Number(e.target.value))}
-            className="w-24"
+            className="border p-2 rounded-lg w-full" // Menambahkan gaya yang sama seperti input lainnya
           />
-          <Button onClick={handleSelectProduct}>Tambah Produk</Button>
+
+          {/* Tambah Produk */}
+          <Button onClick={handleSelectProduct} className="w-full">
+            Tambah Produk
+          </Button>
         </div>
       </div>
 
       <div className="flex flex-col gap-5 mt-10">
-        <h2 className="text-xl font-bold">Produk yang Dipilih</h2>
+        <h2 className="text-lg">Produk yang Dipilih</h2>
         {selectedProducts.length > 0 ? (
           selectedProducts.map((product) => (
             <div
               key={product.id}
-              className="flex justify-between items-center border p-4 rounded-lg"
+              className="flex justify-between items-center border p-4 rounded-lg w-full gap-4"
             >
-              <span>{product.name}</span>
+              <span className="flex-grow">{product.name}</span>
+
               <div className="flex gap-2 items-center">
                 <Input
                   type="number"
@@ -208,26 +223,37 @@ export default function SalesPage() {
                   onChange={(e) =>
                     handlePriceChange(product.id, Number(e.target.value))
                   }
-                  className="w-24"
+                  className="border p-2 rounded-lg w-32" // Menambahkan gaya yang sama seperti input lainnya
                 />
-                <div className="flex items-center gap-2">
-                  <Button
-                    onClick={() => handleQuantityChange(product.id, -1)}
-                    disabled={product.quantity === 0}
-                  >
-                    -
-                  </Button>
-                  <span>{product.quantity}</span>
-                  <Button
-                    onClick={() => handleQuantityChange(product.id, 1)}
-                    disabled={product.quantity >= product.availableStock}
-                  >
-                    +
-                  </Button>
-                  <span className="text-sm text-gray-500">
-                    (Stok: {product.availableStock})
-                  </span>
-                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={() => handleQuantityChange(product.id, -1)}
+                  disabled={product.quantity === 0}
+                  className="w-10 h-10 flex items-center justify-center"
+                >
+                  -
+                </Button>
+                <span className="w-10 text-center">{product.quantity}</span>
+                <Button
+                  onClick={() => handleQuantityChange(product.id, 1)}
+                  disabled={product.quantity >= product.availableStock}
+                  className="w-10 h-10 flex items-center justify-center"
+                >
+                  +
+                </Button>
+                <span className="text-sm text-gray-500">
+                  (Stok: {product.availableStock})
+                </span>
+
+                {/* Hapus Produk */}
+                <Button
+                  onClick={() => handleRemoveProduct(product.id)}
+                  className="bg-red-500 text-white"
+                >
+                  Hapus
+                </Button>
               </div>
             </div>
           ))
@@ -246,8 +272,8 @@ export default function SalesPage() {
 
       {/* Laporan Harian */}
       <div className="flex flex-col gap-5 mt-10">
-        <h2 className="text-xl font-bold">Laporan Harian</h2>
-        <div className="border p-4 rounded-lg">
+        <h2 className="text-lg">Laporan Harian</h2>
+        <div className="border p-4 rounded-lg w-full">
           <p>Total Produk Terjual: {totalQuantity}</p>
           <p>Total Pendapatan: Rp {totalRevenue.toLocaleString("id-ID")}</p>
         </div>
