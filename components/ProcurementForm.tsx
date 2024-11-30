@@ -101,7 +101,7 @@ export default function ProcurementForm() {
               required
             />
             <div className="flex gap-2">
-              <div className="flex-grow">
+              <div className="flex-1 min-w-[100px] w-full">
                 <FormField
                   name="quantity"
                   label="Kuantitas"
