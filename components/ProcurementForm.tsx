@@ -100,8 +100,8 @@ export default function ProcurementForm() {
               errors={errors}
               required
             />
-            <div className="flex gap-2">
-              <div className="flex-grow">
+            <div className="flex flex-wrap gap-2">
+              <div className="w-full md:w-1/2">
                 <FormField
                   name="quantity"
                   label="Kuantitas"
@@ -111,7 +111,7 @@ export default function ProcurementForm() {
                   required
                 />
               </div>
-              <div>
+              <div className="w-full md:w-1/2">
                 <label htmlFor="unit" className="block mb-2">
                   Satuan
                 </label>
