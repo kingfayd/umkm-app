@@ -1,4 +1,3 @@
-//ProcurementTable.tsx
 "use client";
 import { useEffect, useState } from "react";
 import {
@@ -19,7 +18,7 @@ interface ProcurementItem {
   itemName: string | null;
   initialQuantity: number | null;
   currentQuantity: number | null;
-  unitPrice: number;
+  unit: string | null; // Unit still exists in the data
   totalPrice: number;
   supplierName: string | null;
   purchaseDate: string;
@@ -88,12 +87,11 @@ const ProcurementTable = () => {
           <TableRow>
             <TableHead>Kategori</TableHead>
             <TableHead>Nama</TableHead>
-            <TableHead>Jumlah</TableHead>
-            <TableHead>Harga Satuan</TableHead>
+            <TableHead>Kuantitas</TableHead> {/* Combined quantity and unit */}
             <TableHead>Total Harga</TableHead>
             <TableHead>Supplier</TableHead>
             <TableHead>Tanggal</TableHead>
-            <TableHead>Stok</TableHead>
+            <TableHead>Stok</TableHead> {/* Added unit to stock column */}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -101,14 +99,23 @@ const ProcurementTable = () => {
             <TableRow key={item.id}>
               <TableCell>{item.category}</TableCell>
               <TableCell>{item.itemName || "-"}</TableCell>
-              <TableCell>{item.initialQuantity || "-"}</TableCell>
-              <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
+              <TableCell>
+                {item.initialQuantity
+                  ? `${item.initialQuantity} ${item.unit || ""}`
+                  : "-"}
+              </TableCell>{" "}
+              {/* Display combined quantity and unit */}
               <TableCell>{formatCurrency(item.totalPrice)}</TableCell>
               <TableCell>{item.supplierName || "-"}</TableCell>
               <TableCell>
                 {new Date(item.purchaseDate).toLocaleDateString("id-ID")}
               </TableCell>
-              <TableCell>{item.currentQuantity || "-"}</TableCell>
+              <TableCell>
+                {item.currentQuantity
+                  ? `${item.currentQuantity} ${item.unit || ""}`
+                  : "-"}
+              </TableCell>{" "}
+              {/* Display combined stock and unit */}
             </TableRow>
           ))}
         </TableBody>

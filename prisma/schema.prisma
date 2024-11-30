@@ -8,14 +8,21 @@ datasource db {
 }
 
 model Procurement {
-  id           Int                     @id @default(autoincrement())
-  itemName     String
-  quantity     Int
-  unitPrice    Float
-  totalPrice   Float                  // Ini bisa dihitung di backend
-  supplierName String
-  purchaseDate DateTime
-  productions  ProductionProcurement[] // Relasi ke tabel join
+  id              Int              @id @default(autoincrement())
+  category        String
+  itemName        String
+  unitPrice       Float
+  totalPrice      Float
+  unit            String?
+  supplierName    String?
+  purchaseDate    DateTime
+  initialQuantity Int              @default(0)
+  currentQuantity Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  userId          Int
+  user            User             @relation(fields: [userId], references: [id])
+
 }
 
 model Production {
@@ -40,11 +47,12 @@ model ProductionProcurement {
 
 // Model pengguna
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  email     String   @unique
+  id        Int          @id @default(autoincrement())
+  username  String       @unique
+  email     String       @unique
   password  String
-  createdAt DateTime @default(now())
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  procurements Procurement[]
+  }
 
-  @@map("user") // Sesuaikan nama tabel jika perlu
-}
