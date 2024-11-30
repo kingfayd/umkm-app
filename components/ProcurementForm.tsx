@@ -27,6 +27,15 @@ const PROCUREMENT_CATEGORIES = {
   PROMOSI: "Promosi dan Pemasaran",
 } as const;
 
+const PROCUREMENT_UNITS = {
+  UNIT: "Unit",
+  KG: "Kg",
+  LITER: "Liter",
+} as const;
+
+type ProcurementUnit =
+  (typeof PROCUREMENT_UNITS)[keyof typeof PROCUREMENT_UNITS];
+
 type ProcurementCategory =
   (typeof PROCUREMENT_CATEGORIES)[keyof typeof PROCUREMENT_CATEGORIES];
 
@@ -34,7 +43,8 @@ interface FormValues {
   category: ProcurementCategory;
   itemName?: string;
   quantity?: number;
-  unitPrice: number;
+  unit?: ProcurementUnit;
+  totalPrice: number;
   supplierName?: string;
   purchaseDate: Date;
 }
@@ -49,6 +59,7 @@ export default function ProcurementForm() {
     formState: { errors },
   } = useForm<FormValues>();
 
+  // Modifikasi onSubmit untuk mengirim unit
   const onSubmit = async (data: FormValues) => {
     try {
       const response = await fetch("/api/procurement", {
@@ -56,7 +67,11 @@ export default function ProcurementForm() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ...data, category }),
+        body: JSON.stringify({
+          ...data,
+          category,
+          unit: data.unit, // Tambahkan unit ke data yang dikirim
+        }),
       });
 
       const result = await response.json();
@@ -85,17 +100,41 @@ export default function ProcurementForm() {
               errors={errors}
               required
             />
+            <div className="flex gap-2">
+              <div className="flex-grow">
+                <FormField
+                  name="quantity"
+                  label="Kuantitas"
+                  type="number"
+                  register={register}
+                  errors={errors}
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="unit" className="block mb-2">
+                  Satuan
+                </label>
+                <select
+                  id="unit"
+                  {...register("unit", { required: "Pilih satuan" })}
+                  className="border p-2 rounded w-full"
+                >
+                  <option value="">Pilih Satuan</option>
+                  {Object.values(PROCUREMENT_UNITS).map((unit) => (
+                    <option key={unit} value={unit}>
+                      {unit}
+                    </option>
+                  ))}
+                </select>
+                {errors.unit && (
+                  <p className="text-red-500 text-sm">{errors.unit.message}</p>
+                )}
+              </div>
+            </div>
             <FormField
-              name="quantity"
-              label="Kuantitas"
-              type="number"
-              register={register}
-              errors={errors}
-              required
-            />
-            <FormField
-              name="unitPrice"
-              label="Harga Satuan"
+              name="totalPrice"
+              label="Harga Total"
               type="number"
               register={register}
               errors={errors}
@@ -138,8 +177,8 @@ export default function ProcurementForm() {
               required
             />
             <FormField
-              name="unitPrice"
-              label="Harga Satuan"
+              name="totalPrice"
+              label="Harga Total"
               type="number"
               register={register}
               errors={errors}
@@ -174,7 +213,7 @@ export default function ProcurementForm() {
               required
             />
             <FormField
-              name="unitPrice"
+              name="totalPrice"
               label="Biaya Perbaikan"
               type="number"
               register={register}
@@ -204,7 +243,7 @@ export default function ProcurementForm() {
               required
             />
             <FormField
-              name="unitPrice"
+              name="totalPrice"
               label="Biaya Transportasi/Pengiriman"
               type="number"
               register={register}
@@ -233,7 +272,7 @@ export default function ProcurementForm() {
               required
             />
             <FormField
-              name="unitPrice"
+              name="totalPrice"
               label="Biaya Tagihan"
               type="number"
               register={register}
@@ -262,7 +301,7 @@ export default function ProcurementForm() {
               required
             />
             <FormField
-              name="unitPrice"
+              name="totalPrice"
               label="Biaya Promosi"
               type="number"
               register={register}
