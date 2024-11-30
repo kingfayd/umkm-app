@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Procurement {
@@ -25,25 +26,6 @@ model Procurement {
 
 }
 
-model Production {
-  id               Int                     @id @default(autoincrement())
-  productName      String
-  productionDate   DateTime
-  productionQuantity Int                    @default(0) // Set default value
-  quantity           Int
-  items            ProductionProcurement[] // Relasi ke tabel join
-}
-
-model ProductionProcurement {
-  id             Int         @id @default(autoincrement())
-  productionId   Int
-  procurementId  Int
-  quantity       Int         // Menyimpan jumlah bahan yang digunakan
-  production     Production   @relation(fields: [productionId], references: [id], onDelete: Cascade)
-  procurement    Procurement  @relation(fields: [procurementId], references: [id], onDelete: Cascade)
-
-  @@unique([productionId, procurementId]) // Menjamin tidak ada duplikasi relasi
-}
 
 // Model pengguna
 model User {
