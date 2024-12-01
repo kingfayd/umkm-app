@@ -1,19 +1,15 @@
 import { PrismaClient } from "@prisma/client";
 
-// Tambahkan deklarasi global untuk memperluas tipe global
 declare global {
+  // Deklarasi global untuk mencegah multiple instance di mode development
+  // Gunakan `let` untuk mendukung mode development
   var prisma: PrismaClient | undefined;
 }
 
-let prisma: PrismaClient;
+const prisma: PrismaClient = global.prisma || new PrismaClient();
 
-if (process.env.NODE_ENV === "production") {
-  prisma = new PrismaClient();
-} else {
-  if (!global.prisma) {
-    global.prisma = new PrismaClient();
-  }
-  prisma = global.prisma;
+if (process.env.NODE_ENV !== "production") {
+  global.prisma = prisma;
 }
 
 export default prisma;
