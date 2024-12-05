@@ -88,3 +88,6 @@ export async function GET() {
     );
   }
 }
+
+// Export this to indicate the route is dynamic
+export const dynamic = "force-dynamic";
