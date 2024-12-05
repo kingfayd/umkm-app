@@ -1,9 +1,11 @@
 // app/(root)/procurement/edit/page.tsx ok
 "use client";
 
+import { Suspense } from "react";
 import { CardContent } from "@/components/RootCard";
 import ProcurementEdit from "@/components/ProcurementEdit";
 
+// Halaman untuk Edit Pengadaan
 export default function ProcurementPage() {
   return (
     <div className="flex flex-col gap-5 w-full">
@@ -12,7 +14,11 @@ export default function ProcurementPage() {
           <section className="flex-grow flex justify-center">
             <p className="text-center">Edit Pengadaan</p>
           </section>
-          <ProcurementEdit />
+
+          {/* Pembungkus Suspense */}
+          <Suspense fallback={<div>Loading...</div>}>
+            <ProcurementEdit />
+          </Suspense>
         </CardContent>
       </section>
     </div>
