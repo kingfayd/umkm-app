@@ -1,10 +1,8 @@
-// components/SignInForm.tsx
-"use client"; // Tambahkan direktif ini di atas file
-
+"use client";
 import React, { useState } from "react";
 import Input from "./ui/input";
 import { Button } from "./ui/button";
-import { useRouter } from "next/navigation"; // Ganti dengan import dari next/navigation
+import { useRouter } from "next/navigation";
 
 const SignInForm = () => {
   const [email, setEmail] = useState("");
@@ -16,7 +14,7 @@ const SignInForm = () => {
     event.preventDefault();
 
     try {
-      const response = await fetch("/api/auth/signin", {
+      const response = await fetch("/api/auth/sign-in", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -24,15 +22,23 @@ const SignInForm = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      if (!response.ok) {
+      // Check if the response is successful
+      if (response.ok) {
         const data = await response.json();
-        setError(data.message || "An error occurred");
-        return;
+        localStorage.setItem("authToken", data.token); // Simpan token di localStorage
+        router.push("/"); // Redirect ke home
       }
 
-      router.push("/.");
+      // If sign-in is successful, get the token and user data (including userId)
+      const data = await response.json();
+
+      // Store the JWT token in localStorage or sessionStorage (optional)
+      localStorage.setItem("authToken", data.token); // Or use sessionStorage if you want it to expire when the session ends
+
+      // Redirect to the home page after successful sign-in
+      router.push("/");
     } catch (error) {
-      setError("An error occurred while signing in");
+      setError("An error occurred while signing in.");
     }
   };
 
@@ -43,14 +49,12 @@ const SignInForm = () => {
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        error={error ? { message: error } : undefined}
       />
       <Input
         label="Password"
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        error={error ? { message: error } : undefined}
       />
       {error && <p className="text-red-500 text-sm">{error}</p>}
       <Button type="submit">Sign In</Button>
