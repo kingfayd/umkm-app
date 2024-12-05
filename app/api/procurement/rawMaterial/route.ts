@@ -2,17 +2,21 @@ import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
 import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { Prisma } from "@prisma/client";
 
 const SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "defaultsecret"
 );
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     // Ambil token dari cookie
     const tokenCookie = cookies().get("authToken");
     if (!tokenCookie) {
-      return new NextResponse("Token not provided", { status: 401 });
+      return NextResponse.json(
+        { error: "Token tidak tersedia" },
+        { status: 401 }
+      );
     }
 
     const token = tokenCookie.value;
@@ -22,30 +26,64 @@ export async function GET(req: Request) {
     try {
       decoded = await jwtVerify(token, SECRET);
     } catch (err) {
-      console.error("Invalid token:", err);
-      return new NextResponse("Invalid token", { status: 401 });
+      console.error("Token tidak valid:", err);
+      return NextResponse.json({ error: "Token tidak valid" }, { status: 401 });
     }
 
+    // Pastikan payload dan ID tersedia
     const userId = decoded.payload.id;
     if (!userId) {
-      return new NextResponse("User ID not found in token", { status: 401 });
+      return NextResponse.json(
+        { error: "ID Pengguna tidak ditemukan" },
+        { status: 401 }
+      );
     }
 
-    // Ambil data dari database untuk user tertentu
+    // Konversi userId ke number jika diperlukan
+    const userIdNumber = Number(userId);
+
+    // Ambil data bahan baku dari database untuk user tertentu
     const rawMaterialItems = await prisma.procurement.findMany({
-      where: { userId, category: "Bahan Baku Produksi" },
+      where: {
+        userId: userIdNumber, // Gunakan userId yang sudah dikonversi ke number
+        category: "Bahan Baku Produksi",
+      },
       select: {
         id: true,
         itemName: true,
         currentQuantity: true,
+        unit: true,
+      },
+      orderBy: {
+        id: "desc",
       },
     });
 
-    return NextResponse.json(rawMaterialItems);
+    // Kembalikan respons JSON dengan data bahan baku
+    return NextResponse.json(rawMaterialItems, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store, max-age=0",
+      },
+    });
   } catch (error) {
-    console.error("Error fetching raw material items:", error);
+    console.error("Kesalahan saat mengambil item bahan baku:", error);
+
+    // Tangani error dengan lebih spesifik
+    if (error instanceof Error) {
+      return NextResponse.json(
+        {
+          error: "Gagal mengambil item bahan baku",
+          details: error.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    // Fallback untuk error yang tidak diketahui
     return NextResponse.json(
-      { error: "Error fetching raw material items" },
+      { error: "Kesalahan server internal" },
       { status: 500 }
     );
   }
