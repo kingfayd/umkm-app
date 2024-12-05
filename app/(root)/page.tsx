@@ -8,7 +8,7 @@ import BarChart from "@/components/ProcurementBarChart";
 
 import ProcurementRecent from "@/components/ProcurementRecent";
 
-import SalesCard, { SalesProps } from "@/components/SalesCard";
+import { SalesProps } from "@/components/SalesCard";
 
 const cardData: CardProps[] = [
   {
