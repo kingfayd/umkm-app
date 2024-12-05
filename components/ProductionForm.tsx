@@ -22,7 +22,6 @@ export default function ProductionForm() {
   const {
     register,
     handleSubmit,
-    reset,
     control,
     formState: { errors },
   } = useForm<FormValues>();
@@ -55,18 +54,7 @@ export default function ProductionForm() {
   }, []);
 
   const onSubmit = async (data: FormValues) => {
-    const productionDateISO = new Date(data.productionDate).toISOString();
-
     // Tambahkan id ke setiap item
-    const itemsWithId = data.items.map((item) => {
-      const selectedProcurementItem = procurementItems.find(
-        (procItem) => procItem.item_name === item.item_name // Menggunakan item_name
-      );
-      return {
-        ...item,
-        id: selectedProcurementItem?.id, // Ambil ID dari procurementItems
-      };
-    });
   };
 
   return (
