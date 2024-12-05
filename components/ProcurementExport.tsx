@@ -1,13 +1,14 @@
-//ProcurementExport.tsx
+// ProcurementExport.tsx
 "use client";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import Input from "@/components/ui/input";
-import { fetchWithAuth } from "../lib/utils"; // Ensure this function is properly defined to handle authentication
+import { fetchWithAuth } from "../lib/utils"; // Pastikan fungsi ini mendukung autentikasi
 
 interface ExportFormValues {
   startDate: string;
   endDate: string;
+  format: string; // Tambahkan properti format untuk menyimpan pilihan format
 }
 
 export default function ProcurementExport() {
@@ -22,6 +23,7 @@ export default function ProcurementExport() {
       const queryString = new URLSearchParams({
         startDate: data.startDate,
         endDate: data.endDate,
+        format: data.format, // Sertakan format dalam query string
       }).toString();
 
       const response = await fetchWithAuth(
@@ -36,7 +38,9 @@ export default function ProcurementExport() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "procurement-report.pdf";
+        a.download = `procurement-report.${
+          data.format === "pdf" ? "pdf" : "xlsx"
+        }`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -65,8 +69,23 @@ export default function ProcurementExport() {
         {...register("endDate", { required: "Tanggal akhir diperlukan" })}
         error={errors.endDate ? { message: errors.endDate.message } : undefined}
       />
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Format
+        </label>
+        <select
+          {...register("format", { required: "Pilih format file" })}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+        >
+          <option value="pdf">PDF</option>
+          <option value="excel">Excel</option>
+        </select>
+        {errors.format && (
+          <p className="text-red-500">{errors.format.message}</p>
+        )}
+      </div>
       <Button type="submit" variant="default">
-        Ekspor ke PDF
+        Ekspor
       </Button>
     </form>
   );

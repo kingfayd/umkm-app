@@ -3,15 +3,15 @@ import prisma from "../../../lib/prisma";
 import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
-// api/procurement/route.ts
-
+// JWT Secret key
 const SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "defaultsecret"
 );
 
+// GET - Fetch procurement data for authenticated user
 export async function GET() {
   try {
-    // Ambil token dari cookie
+    // Retrieve token from cookie
     const tokenCookie = cookies().get("authToken");
     if (!tokenCookie) {
       return new NextResponse("Token not provided", { status: 401 });
@@ -19,7 +19,7 @@ export async function GET() {
 
     const token = tokenCookie.value;
 
-    // Verifikasi token
+    // Verify token
     let decoded;
     try {
       decoded = await jwtVerify(token, SECRET);
@@ -33,7 +33,7 @@ export async function GET() {
       return new NextResponse("User ID not found in token", { status: 401 });
     }
 
-    // Ambil data dari database untuk user tertentu
+    // Fetch procurement data from DB for the specific user
     const procurementData = await prisma.procurement.findMany({
       where: { userId },
     });
@@ -45,9 +45,9 @@ export async function GET() {
   }
 }
 
+// POST - Save new procurement data to the database
 export async function POST(req: Request) {
   try {
-    // Mendapatkan data dari request body
     const data: {
       category?: string;
       itemName?: string;
@@ -57,9 +57,7 @@ export async function POST(req: Request) {
       supplierName?: string;
       purchaseDate?: string;
     } = await req.json();
-    console.log("Data received:", data); // Debugging: log data yang diterima
 
-    // Ambil token dari cookie
     const tokenCookie = cookies().get("authToken");
     if (!tokenCookie) {
       return new NextResponse("Token not provided", { status: 401 });
@@ -67,7 +65,6 @@ export async function POST(req: Request) {
 
     const token = tokenCookie.value;
 
-    // Verifikasi dan dekode token
     let decoded;
     try {
       decoded = await jwtVerify(token, SECRET);
@@ -83,7 +80,6 @@ export async function POST(req: Request) {
       });
     }
 
-    // Extract data dari request
     const {
       category,
       itemName,
@@ -92,9 +88,7 @@ export async function POST(req: Request) {
       supplierName,
       purchaseDate,
     } = data;
-    console.log("userId:", userId); // Debugging: log nilai userId
 
-    // Validasi input
     if (!category || !purchaseDate || totalPrice == null) {
       return new NextResponse(
         "Category, purchaseDate, and unitPrice are required",
@@ -121,26 +115,87 @@ export async function POST(req: Request) {
       return new NextResponse("Invalid purchaseDate", { status: 400 });
     }
 
-    // Menyimpan procurement ke database
     const procurement = await prisma.procurement.create({
       data: {
         category,
-        itemName: itemName ?? "", // Menggunakan string kosong sebagai nilai default
+        itemName: itemName ?? "",
         initialQuantity: parsedQuantity ?? undefined,
         currentQuantity: parsedQuantity ?? undefined,
         unit: data.unit ?? null,
         unitPrice: 0,
         totalPrice: parsedUnitPrice,
-        supplierName: supplierName ?? null, // Tetap null jika supplierName kosong
+        supplierName: supplierName ?? null,
         purchaseDate: parsedPurchaseDate,
         userId,
       },
     });
 
-    // Mengembalikan response dengan data procurement yang telah disimpan
     return NextResponse.json(procurement, { status: 201 });
   } catch (error) {
     console.error("Error saving procurement:", error);
     return new NextResponse("Error saving procurement", { status: 500 });
+  }
+}
+
+// DELETE - Delete procurement data by ID
+export async function DELETE(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const id = url.searchParams.get("id");
+
+    if (!id) {
+      return new NextResponse("ID not provided", { status: 400 });
+    }
+
+    const tokenCookie = cookies().get("authToken");
+    if (!tokenCookie) {
+      return new NextResponse("Token not provided", { status: 401 });
+    }
+
+    const token = tokenCookie.value;
+
+    let decoded;
+    try {
+      decoded = await jwtVerify(token, SECRET);
+    } catch (err) {
+      console.error("Invalid token:", err);
+      return new NextResponse("Invalid token", { status: 401 });
+    }
+
+    const userId = decoded.payload.id;
+    if (!userId) {
+      return new NextResponse("User ID not found in token", { status: 401 });
+    }
+
+    // Delete related production items first (to avoid foreign key constraint violation)
+    await prisma.productionItem.deleteMany({
+      where: {
+        procurementId: Number(id),
+      },
+    });
+
+    // Delete procurement record
+    const procurement = await prisma.procurement.deleteMany({
+      where: {
+        id: Number(id),
+        userId: userId, // Ensure only the authorized user can delete
+      },
+    });
+
+    if (procurement.count === 0) {
+      return new NextResponse("Data not found or you don't have permission", {
+        status: 404,
+      });
+    }
+
+    return NextResponse.json(
+      { message: "Data successfully deleted" },
+      {
+        status: 200,
+      }
+    );
+  } catch (error) {
+    console.error("Error deleting procurement:", error);
+    return new NextResponse("Error deleting procurement", { status: 500 });
   }
 }

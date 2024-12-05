@@ -5,6 +5,7 @@ import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type CardProps = {
+  id: string; // Tambahkan properti id
   label: string;
   icon: LucideIcon;
   amount: string;

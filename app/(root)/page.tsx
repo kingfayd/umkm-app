@@ -1,74 +1,116 @@
-/** @format */
+"use client";
 
-import PageTitle from "@/components/PageTitle";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { DollarSign, Users, CreditCard, Activity } from "lucide-react";
-import Card, { CardContent, CardProps } from "@/components/Card";
-import BarChart from "@/components/BarChart";
+import Card, { CardProps, CardContent } from "@/components/Card";
+import BarChart from "@/components/ProcurementBarChart";
+
+import ProcurementRecent from "@/components/ProcurementRecent";
+
 import SalesCard, { SalesProps } from "@/components/SalesCard";
 
 const cardData: CardProps[] = [
   {
-    label: "Total Revenue",
+    id: "1",
+    label: "Pengeluaran",
     amount: "$45,231.89",
-    discription: "+20.1% from last month",
+    discription: "Total pengeluaran bulan ini",
     icon: DollarSign,
   },
   {
-    label: "Subscriptions",
+    id: "2",
+    label: "Pemasukan",
     amount: "+2350",
-    discription: "+180.1% from last month",
+    discription: "Pemasukan bulan ini",
     icon: Users,
   },
   {
-    label: "Sales",
-    amount: "+12,234",
-    discription: "+19% from last month",
+    id: "3",
+    label: "Penjualan",
+    amount: "+1045",
+    discription: "Total penjualan bulan ini",
     icon: CreditCard,
   },
   {
-    label: "Active Now",
-    amount: "+573",
-    discription: "+201 since last hour",
+    id: "4",
+    label: "Cuan",
+    amount: "+18,000,000",
+    discription: "Total Cuan bulan ini",
     icon: Activity,
   },
 ];
 
-const uesrSalesData: SalesProps[] = [
-  {
-    name: "Olivia Martin",
-    email: "olivia.martin@email.com",
-    saleAmount: "+$1,999.00",
-  },
-  {
-    name: "Jackson Lee",
-    email: "isabella.nguyen@email.com",
-    saleAmount: "+$1,999.00",
-  },
-  {
-    name: "Isabella Nguyen",
-    email: "isabella.nguyen@email.com",
-    saleAmount: "+$39.00",
-  },
-  {
-    name: "William Kim",
-    email: "will@email.com",
-    saleAmount: "+$299.00",
-  },
-  {
-    name: "Sofia Davis",
-    email: "sofia.davis@email.com",
-    saleAmount: "+$39.00",
-  },
-];
-
 export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [userSalesData, setUserSalesData] = useState<SalesProps[]>([]);
+  const [error, setError] = useState<string | null>(null); // Menambahkan state untuk menangani error
+  const router = useRouter();
+
+  // Fungsi untuk memeriksa token dan autentikasi pengguna
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem("authToken"); // Ambil token dari localStorage
+      if (!token) {
+        console.error("Authorization token not found in localStorage");
+        router.push("/auth/sign-in"); // Pengguna tidak terautentikasi, arahkan ke login
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/auth/validate-token", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`, // Kirim token melalui header Authorization
+          },
+          credentials: "include", // Kirim cookie bersama request
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUserId(data.userId);
+          setIsAuthenticated(true); // Set status autentikasi berhasil
+        } else {
+          localStorage.removeItem("authToken"); // Hapus token jika tidak valid
+          router.push("/auth/sign-in"); // Arahkan ke halaman login
+        }
+      } catch (error) {
+        console.error("Error validating token:", error);
+        setError("Token validation failed. Please try again."); // Menampilkan pesan error
+        router.push("/auth/sign-in"); // Gagal memvalidasi token, arahkan ke login
+      } finally {
+        setLoading(false); // Set loading selesai
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
+  // Tampilkan loading selama proses autentikasi dan pengambilan data
+  if (loading) {
+    return <p>Loading...</p>;
+  }
+
+  // Jika pengguna tidak terautentikasi, tidak menampilkan konten
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  // Jika ada error, tampilkan pesan error
+  if (error) {
+    return <p>{error}</p>;
+  }
+
   return (
-    <div className="flex flex-col gap-5  w-full">
-      <PageTitle title="Dashboard" />
+    <div className="flex flex-col gap-5 w-full">
       <section className="grid w-full grid-cols-1 gap-4 gap-x-8 transition-all sm:grid-cols-2 xl:grid-cols-4">
-        {cardData.map((d, i) => (
+        {/* Menampilkan data kartu */}
+        {cardData.map((d) => (
           <Card
-            key={i}
+            key={d.id}
+            id={d.id}
             amount={d.amount}
             discription={d.discription}
             icon={d.icon}
@@ -76,30 +118,36 @@ export default function Home() {
           />
         ))}
       </section>
-      <section className="grid grid-cols-1  gap-4 transition-all lg:grid-cols-2">
-        <CardContent>
-          <p className="p-4 font-semibold">Overview</p>
 
+      <section className="grid grid-cols-1 gap-4 transition-all lg:grid-cols-2">
+        {/* Grafik pengadaan */}
+        <CardContent>
+          <p className="p-4 font-semibold">Pengadaan</p>
           <BarChart />
         </CardContent>
+
+        {/* Data penjualan pengguna */}
         <CardContent className="flex justify-between gap-4">
           <section>
-            <p>Recent Sales</p>
-            <p className="text-sm text-gray-400">
-              You made 265 sales this month.
-            </p>
+            <p>Penjualan</p>
+            <p className="text-sm text-gray-400">Penjualan terkini bulan ini</p>
           </section>
-          {uesrSalesData.map((d, i) => (
-            <SalesCard
-              key={i}
-              email={d.email}
-              name={d.name}
-              saleAmount={d.saleAmount}
-            />
-          ))}
         </CardContent>
 
-        {/*  */}
+        {/* Data pengadaan terkini */}
+        <CardContent className="flex justify-between gap-4">
+          <section>
+            <p>Pengadaan</p>
+            <p className="text-sm text-gray-400">Pengadaan terkini bulan ini</p>
+          </section>
+          <ProcurementRecent />
+        </CardContent>
+        <CardContent>
+          <p className="p-4 font-semibold">Penjualan</p>
+        </CardContent>
+        <CardContent>
+          <p className="p-4 font-semibold">Income Bulanan</p>
+        </CardContent>
       </section>
     </div>
   );

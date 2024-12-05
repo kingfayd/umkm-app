@@ -1,3 +1,4 @@
+// app/(root)/layout.tsx
 /** @format */
 
 import type { Metadata } from "next";

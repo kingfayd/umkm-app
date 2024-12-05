@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation"; // Import useRouter for navigation
 import {
   Table,
   TableHeader,
@@ -18,7 +19,7 @@ interface ProcurementItem {
   itemName: string | null;
   initialQuantity: number | null;
   currentQuantity: number | null;
-  unit: string | null; // Unit still exists in the data
+  unit: string | null;
   totalPrice: number;
   supplierName: string | null;
   purchaseDate: string;
@@ -30,6 +31,12 @@ const ProcurementTable = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<ProcurementItem | null>(
+    null
+  );
+
+  const router = useRouter(); // Initialize useRouter for navigation
 
   useEffect(() => {
     const fetchData = async () => {
@@ -71,6 +78,43 @@ const ProcurementTable = () => {
     });
   };
 
+  // Redirect user to the procurement edit page with specific ID
+  const handleEdit = (id: number) => {
+    router.push(`/procurement/edit?id=${id}`);
+  };
+
+  const handleDeleteClick = (item: ProcurementItem) => {
+    setItemToDelete(item); // Set the item to delete
+    setIsDeleting(true); // Show confirmation modal
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!itemToDelete) return;
+    try {
+      const response = await fetchWithAuth(
+        `/api/procurement?id=${itemToDelete.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (response.ok) {
+        setData(data.filter((item) => item.id !== itemToDelete.id)); // Remove item from UI
+        setItemToDelete(null); // Clear selected item
+        setIsDeleting(false); // Hide confirmation modal
+        alert("Data berhasil dihapus!"); // Show alert after delete
+      } else {
+        alert("Gagal menghapus data pengadaan.");
+      }
+    } catch (error) {
+      console.error("Error deleting procurement:", error);
+      alert("Gagal menghapus data pengadaan.");
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setIsDeleting(false); // Close confirmation modal without deleting
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -87,11 +131,12 @@ const ProcurementTable = () => {
           <TableRow>
             <TableHead>Kategori</TableHead>
             <TableHead>Nama</TableHead>
-            <TableHead>Kuantitas</TableHead> {/* Combined quantity and unit */}
+            <TableHead>Kuantitas</TableHead>
             <TableHead>Total Harga</TableHead>
             <TableHead>Supplier</TableHead>
             <TableHead>Tanggal</TableHead>
-            <TableHead>Stok</TableHead> {/* Added unit to stock column */}
+            <TableHead>Stok</TableHead>
+            <TableHead>Aksi</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -103,8 +148,7 @@ const ProcurementTable = () => {
                 {item.initialQuantity
                   ? `${item.initialQuantity} ${item.unit || ""}`
                   : "-"}
-              </TableCell>{" "}
-              {/* Display combined quantity and unit */}
+              </TableCell>
               <TableCell>{formatCurrency(item.totalPrice)}</TableCell>
               <TableCell>{item.supplierName || "-"}</TableCell>
               <TableCell>
@@ -114,14 +158,26 @@ const ProcurementTable = () => {
                 {item.currentQuantity
                   ? `${item.currentQuantity} ${item.unit || ""}`
                   : "-"}
-              </TableCell>{" "}
-              {/* Display combined stock and unit */}
+              </TableCell>
+              <TableCell className="flex space-x-2">
+                <button
+                  onClick={() => handleEdit(item.id)}
+                  className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-md text-sm"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteClick(item)}
+                  className="bg-red-500 text-white hover:bg-red-600 px-4 py-2 rounded-md text-sm"
+                >
+                  Hapus
+                </button>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
 
-      {/* Komponen Pagination */}
       <div className="flex justify-end mt-4">
         <Pagination
           currentPage={currentPage}
@@ -131,6 +187,31 @@ const ProcurementTable = () => {
           onItemsPerPageChange={setItemsPerPage}
         />
       </div>
+
+      {/* Modal Konfirmasi Hapus */}
+      {isDeleting && itemToDelete && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-md">
+            <h3 className="text-lg">
+              Apakah Anda yakin ingin menghapus data ini?
+            </h3>
+            <div className="flex space-x-4 mt-4">
+              <button
+                onClick={handleDeleteConfirm}
+                className="bg-red-500 text-white px-4 py-2 rounded-md"
+              >
+                Hapus
+              </button>
+              <button
+                onClick={handleDeleteCancel}
+                className="bg-gray-300 text-black px-4 py-2 rounded-md"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

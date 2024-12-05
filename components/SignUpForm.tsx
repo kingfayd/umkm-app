@@ -1,23 +1,23 @@
+"use client";
 // components/SignUpForm.tsx
-"use client"; // Tambahkan direktif ini di atas file
-
 import React, { useState } from "react";
 import Input from "./ui/input";
 import { Button } from "./ui/button";
-import { useRouter } from "next/navigation"; // Ganti dengan import dari next/navigation
+import { useRouter } from "next/navigation";
 
 const SignUpForm = () => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const router = useRouter();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
     try {
-      const response = await fetch("/api/auth/signup", {
+      const response = await fetch("/api/auth/sign-up", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -26,14 +26,16 @@ const SignUpForm = () => {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        setError(data.message || "An error occurred");
+        const result = await response.json();
+        setError(result.message || "Error signing up");
         return;
       }
 
-      router.push("/.");
+      setSuccess("Account created successfully. Redirecting to sign-in...");
+      setError(null);
+      setTimeout(() => router.push("/auth/sign-in"), 2000);
     } catch (error) {
-      setError("An error occurred while signing up");
+      setError("An error occurred while signing up.");
     }
   };
 
@@ -43,23 +45,21 @@ const SignUpForm = () => {
         label="Username"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
-        error={error ? { message: error } : undefined}
       />
       <Input
         label="Email"
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        error={error ? { message: error } : undefined}
       />
       <Input
         label="Password"
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        error={error ? { message: error } : undefined}
       />
       {error && <p className="text-red-500 text-sm">{error}</p>}
+      {success && <p className="text-green-500 text-sm">{success}</p>}
       <Button type="submit">Sign Up</Button>
     </form>
   );
