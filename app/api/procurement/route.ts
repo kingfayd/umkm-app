@@ -199,6 +199,3 @@ export async function DELETE(req: Request) {
     return new NextResponse("Error deleting procurement", { status: 500 });
   }
 }
-
-// Export this to indicate the route is dynamic
-export const dynamic = "force-dynamic";

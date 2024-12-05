@@ -50,3 +50,5 @@ export async function GET() {
     return NextResponse.error();
   }
 }
+// Export this to indicate the route is dynamic
+export const dynamic = "force-dynamic";
