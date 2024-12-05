@@ -31,7 +31,7 @@ export default function ProductionForm() {
     name: "items",
   });
 
-  const [procurementItems, setProcurementItems] = useState<ProcurementItem[]>([
+  const [procurementItems] = useState<ProcurementItem[]>([
     // Contoh data untuk procurement items, Anda bisa sesuaikan dengan data nyata
     { id: 1, item_name: "Bahan A", quantity: 100 },
     { id: 2, item_name: "Bahan B", quantity: 50 },
