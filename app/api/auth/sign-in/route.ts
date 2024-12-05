@@ -69,3 +69,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Error signing in" }, { status: 500 });
   }
 }
+
+// Export this to indicate the route is dynamic
+export const dynamic = "force-dynamic";
