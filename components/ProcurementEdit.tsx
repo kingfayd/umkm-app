@@ -45,6 +45,7 @@ interface FormValues {
 export default function ProcurementEdit() {
   const [category, setCategory] = useState<ProcurementCategory | "">("");
   const [loading, setLoading] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [procurementData, setProcurementData] = useState<FormValues | null>(
     null
   );
