@@ -1,6 +1,8 @@
 import { NextResponse, NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
+export const dynamic = "force-dynamic";
+
 // Mendapatkan secret key untuk validasi JWT
 const SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "defaultsecret"
@@ -13,7 +15,6 @@ export async function GET(req: NextRequest) {
 
     // Mengecek apakah cookie tersedia
     if (!cookieHeader) {
-      console.error("Cookie header tidak ditemukan");
       return NextResponse.json(
         { message: "Unauthorized - Cookie not found" },
         { status: 401 }
@@ -28,7 +29,6 @@ export async function GET(req: NextRequest) {
 
     // Mengecek apakah token ditemukan
     if (!token) {
-      console.error("Token tidak ditemukan dalam cookie");
       return NextResponse.json(
         { message: "Unauthorized - Token not found" },
         { status: 401 }
@@ -39,9 +39,8 @@ export async function GET(req: NextRequest) {
     const { payload } = await jwtVerify(token, SECRET);
 
     // Jika token valid, ambil userId dari payload
-    const userId = payload.id;
+    const userId = payload.id as string;
     if (!userId) {
-      console.error("User ID tidak ditemukan dalam token");
       return NextResponse.json(
         { message: "Unauthorized - User ID not found" },
         { status: 401 }
@@ -49,7 +48,6 @@ export async function GET(req: NextRequest) {
     }
 
     // Mengembalikan respons bahwa token valid dan memberikan userId
-    console.log("Token valid untuk userId:", userId);
     return NextResponse.json(
       { message: "Token valid", userId },
       { status: 200 }
@@ -61,8 +59,9 @@ export async function GET(req: NextRequest) {
     } else {
       console.error("Unexpected error:", error);
     }
-
-    // Mengembalikan respons bahwa token tidak valid
-    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+    return NextResponse.json(
+      { message: "Invalid token", error: (error as Error).message },
+      { status: 401 }
+    );
   }
 }
