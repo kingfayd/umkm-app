@@ -44,8 +44,8 @@ const cardData: CardProps[] = [
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<number | null>(null);
-  const [userSalesData, setUserSalesData] = useState<SalesProps[]>([]);
+  const [] = useState<number | null>(null);
+  const [] = useState<SalesProps[]>([]);
   const [error, setError] = useState<string | null>(null); // Menambahkan state untuk menangani error
   const router = useRouter();
 
@@ -70,7 +70,7 @@ export default function Home() {
 
         if (response.ok) {
           const data = await response.json();
-          setUserId(data.userId);
+          data.userId;
           setIsAuthenticated(true); // Set status autentikasi berhasil
         } else {
           localStorage.removeItem("authToken"); // Hapus token jika tidak valid

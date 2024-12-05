@@ -6,7 +6,7 @@ const SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "defaultsecret"
 );
 
-export async function POST(req: Request) {
+export async function POST() {
   try {
     // Mengambil token dari cookie menggunakan 'next/headers' (Next.js 13)
     const tokenCookie = cookies().get("authToken");

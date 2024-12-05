@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useRouter, useSearchParams } from "next/navigation"; // Gunakan useSearchParams untuk mengambil query
+import { useRouter, useSearchParams } from "next/navigation"; // Use useSearchParams for query
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 const PROCUREMENT_CATEGORIES = {
@@ -55,17 +55,17 @@ export default function ProcurementEdit() {
     formState: { errors },
   } = useForm<FormValues>();
   const router = useRouter();
-  const searchParams = useSearchParams(); // Gunakan useSearchParams untuk query
+  const searchParams = useSearchParams();
 
-  const procurementId = searchParams.get("id"); // Ambil ID dari query string
+  const procurementId = searchParams.get("id"); // Get procurement ID from query string
 
   useEffect(() => {
     if (!procurementId) {
-      router.push("/procurement"); // Redirect jika ID tidak ditemukan
-      return; // Menghentikan eksekusi lebih lanjut
+      router.push("/procurement"); // Redirect if no ID is found
+      return;
     }
 
-    // Ambil data pengadaan untuk mengedit
+    // Fetch procurement data for editing
     const fetchData = async () => {
       try {
         const response = await fetch(
@@ -78,16 +78,16 @@ export default function ProcurementEdit() {
           reset({
             ...data,
             purchaseDate: data.purchaseDate,
-            quantity: data.initialQuantity, // Pastikan `quantity` diisi dengan `initialQuantity`
-          }); // Isi form dengan data yang diambil
+            quantity: data.initialQuantity, // Use `initialQuantity` for quantity
+          });
         } else {
-          alert("Data tidak ditemukan!");
+          alert("Data not found!");
           router.push("/procurement");
         }
       } catch (error) {
         console.error("Error fetching procurement data:", error);
-        alert("Gagal mengambil data pengadaan");
-        router.push("/procurement"); // Redirect jika ada error
+        alert("Failed to fetch procurement data");
+        router.push("/procurement");
       } finally {
         setLoading(false);
       }
@@ -106,53 +106,42 @@ export default function ProcurementEdit() {
 
       const result = await response.json();
       if (response.ok) {
-        alert("Pengadaan berhasil diperbarui!");
-        router.push("/procurement"); // Kembali ke halaman pengadaan setelah update
+        alert("Procurement updated successfully!");
+        router.push("/procurement"); // Redirect to procurement page after successful update
       } else {
         alert(`Error: ${result.error}`);
       }
     } catch (error) {
       console.error("Error saving procurement data:", error);
-      alert("Error saat memperbarui pengadaan.");
+      alert("Error updating procurement.");
     }
   };
 
-  interface FormFieldProps {
+  const FormField: React.FC<{
     name: string;
     label: string;
     type?: string;
     register: any;
     errors: any;
     required?: boolean;
-  }
-
-  const FormField: React.FC<FormFieldProps> = ({
-    name,
-    label,
-    type = "text",
-    register,
-    errors,
-    required,
-  }) => {
-    return (
-      <div className="flex flex-col">
-        <label htmlFor={name} className="mb-2">
-          {label}
-        </label>
-        <input
-          id={name}
-          type={type}
-          {...register(name, {
-            required: required ? `${label} is required` : false,
-          })}
-          className="border p-2 rounded"
-        />
-        {errors[name] && (
-          <p className="text-red-500 text-sm">{errors[name]?.message}</p>
-        )}
-      </div>
-    );
-  };
+  }> = ({ name, label, type = "text", register, errors, required }) => (
+    <div className="flex flex-col">
+      <label htmlFor={name} className="mb-2">
+        {label}
+      </label>
+      <input
+        id={name}
+        type={type}
+        {...register(name, {
+          required: required ? `${label} is required` : false,
+        })}
+        className="border p-2 rounded"
+      />
+      {errors[name] && (
+        <p className="text-red-500 text-sm">{errors[name]?.message}</p>
+      )}
+    </div>
+  );
 
   const renderFormFields = () => {
     switch (category) {
@@ -390,9 +379,7 @@ export default function ProcurementEdit() {
     }
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  if (loading) return <div>Loading...</div>;
 
   return (
     <TooltipProvider>
