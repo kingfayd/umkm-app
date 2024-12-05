@@ -1,4 +1,4 @@
-// app/(root)/procurement/edit/page.tsx
+// app/(root)/procurement/edit/page.tsx ok
 "use client";
 
 import { CardContent } from "@/components/RootCard";
