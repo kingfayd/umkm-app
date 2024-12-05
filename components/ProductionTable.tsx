@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Table,
   TableHeader,
@@ -20,8 +20,8 @@ interface ProductionItem {
 }
 
 const ProductionTable = () => {
-  const [data, setData] = useState<ProductionItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [data] = useState<ProductionItem[]>([]);
+  const [] = useState(true);
 
   return (
     <div className="overflow-x-auto">
