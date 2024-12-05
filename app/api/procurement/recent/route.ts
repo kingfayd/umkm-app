@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { jwtVerify } from "jose"; // Menggunakan 'jose' untuk verifikasi token JWT
 import { cookies } from "next/headers";
-//app/api/procurement/recent/route.ts
+
+// app/api/procurement/recent/route.ts
 const SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "defaultsecret"
 );
@@ -62,10 +63,27 @@ export async function GET() {
     );
 
     return NextResponse.json(uniqueProcurements, { status: 200 });
-  } catch (error) {
+  } catch (error: unknown) {
+    // Menangani error yang tidak terduga
     console.error("Error fetching recent procurements:", error);
+
+    // Periksa jika error adalah instance dari Error
+    if (error instanceof Error) {
+      return NextResponse.json(
+        {
+          error: "Failed to fetch recent procurements",
+          message: error.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    // Jika error bukan instance dari Error, kirimkan pesan error umum
     return NextResponse.json(
-      { error: "Failed to fetch recent procurements" },
+      {
+        error: "Failed to fetch recent procurements",
+        message: "Unknown error occurred",
+      },
       { status: 500 }
     );
   }
