@@ -7,15 +7,15 @@ import Input from "@/components/ui/input";
 
 interface ProcurementItem {
   id: number;
-  item_name: string; // Menggunakan item_name
+  item_name: string;
   quantity: number;
 }
 
 interface FormValues {
   productName: string;
   productionDate: Date;
-  productionQuantity: number; // Tambahkan field untuk jumlah produksi
-  items: { id: number; item_name: string; quantity: number }[]; // Menggunakan item_name
+  productionQuantity: number;
+  items: { id: number; item_name: string; quantity: number }[];
 }
 
 export default function ProductionForm() {
@@ -31,30 +31,16 @@ export default function ProductionForm() {
     name: "items",
   });
 
-  const [procurementItems, setProcurementItems] = useState<ProcurementItem[]>(
-    []
-  );
-
-  useEffect(() => {
-    const fetchProcurementItems = async () => {
-      try {
-        const response = await fetch("/api/procurement");
-        if (response.ok) {
-          const result: ProcurementItem[] = await response.json();
-          setProcurementItems(result);
-        } else {
-          console.error("Failed to fetch procurement items.");
-        }
-      } catch (error) {
-        console.error("Error fetching procurement items:", error);
-      }
-    };
-
-    fetchProcurementItems();
-  }, []);
+  const [procurementItems, setProcurementItems] = useState<ProcurementItem[]>([
+    // Contoh data untuk procurement items, Anda bisa sesuaikan dengan data nyata
+    { id: 1, item_name: "Bahan A", quantity: 100 },
+    { id: 2, item_name: "Bahan B", quantity: 50 },
+    { id: 3, item_name: "Bahan C", quantity: 200 },
+  ]);
 
   const onSubmit = async (_data: FormValues) => {
-    // Tambahkan id ke setiap item
+    // Tambahkan logic untuk mengirim data jika diperlukan
+    console.log("Form submitted with data: ", _data);
   };
 
   return (
@@ -88,7 +74,7 @@ export default function ProductionForm() {
       />
 
       <Input
-        label="Jumlah Produksi" // Tambahkan input untuk jumlah produksi
+        label="Jumlah Produksi"
         id="productionQuantity"
         type="number"
         placeholder="Jumlah Produksi"
@@ -109,7 +95,6 @@ export default function ProductionForm() {
           <div>
             <select
               {...register(`items.${index}.item_name`, {
-                // Menggunakan item_name
                 required: "Pilih bahan yang akan digunakan",
               })}
               className="border p-2 rounded"
@@ -117,12 +102,11 @@ export default function ProductionForm() {
               <option value="">Pilih Bahan</option>
               {procurementItems.map((item) => (
                 <option key={item.id} value={item.item_name}>
-                  {" "}
                   {item.item_name} (Stok: {item.quantity})
                 </option>
               ))}
             </select>
-            {errors.items?.[index]?.item_name && ( // Menggunakan item_name
+            {errors.items?.[index]?.item_name && (
               <p className="text-red-500 text-sm">
                 {errors.items[index].item_name?.message}
               </p>
@@ -160,7 +144,7 @@ export default function ProductionForm() {
 
       <Button
         type="button"
-        onClick={() => append({ id: 0, item_name: "", quantity: 0 })} // Menggunakan item_name
+        onClick={() => append({ id: 0, item_name: "", quantity: 0 })}
       >
         Tambah Bahan
       </Button>
