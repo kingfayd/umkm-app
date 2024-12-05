@@ -33,3 +33,6 @@ export async function POST(req: Request) {
     );
   }
 }
+
+// Export this to indicate the route is dynamic
+export const dynamic = "force-dynamic";
