@@ -180,3 +180,6 @@ export async function GET(req: Request) {
     });
   }
 }
+
+// Export this to indicate the route is dynamic
+export const dynamic = "force-dynamic";

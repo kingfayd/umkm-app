@@ -1,6 +1,6 @@
-//api/procurement/edit/route.ts
+// app/api/procurement/edit/route.ts
 import { NextResponse } from "next/server";
-import prisma from "../../../../lib/prisma";
+import prisma from "@/lib/prisma";
 import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
@@ -9,11 +9,15 @@ const SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "defaultsecret"
 );
 
+// Tandai route sebagai dynamic
+export const dynamic = "force-dynamic";
+
 // Fungsi untuk mengambil data pengadaan berdasarkan ID
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("id");
+    // Mendapatkan ID dari URL
+    const url = new URL(req.url);
+    const id = url.searchParams.get("id");
 
     if (!id) {
       return new NextResponse("ID pengadaan tidak diberikan", { status: 400 });

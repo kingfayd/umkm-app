@@ -62,3 +62,6 @@ export async function GET() {
     return new NextResponse("Error fetching low stock items", { status: 500 });
   }
 }
+
+// Export this to indicate the route is dynamic
+export const dynamic = "force-dynamic";
