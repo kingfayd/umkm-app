@@ -23,6 +23,7 @@ model Procurement {
   updatedAt       DateTime         @updatedAt
   userId          Int
   user            User             @relation(fields: [userId], references: [id])
+  productionItems ProductionItem[]
 
 }
 
@@ -36,8 +37,20 @@ model User {
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   procurements Procurement[]
-  productionItems ProductionItem[]
   }
+
+model Production {
+  id                 Int              @id @default(autoincrement())
+  productName        String
+  productionDate     DateTime
+  productionQuantity Int
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  userId             Int
+  user               User             @relation(fields: [userId], references: [id])
+
+  // Relasi ke ProductionItem
+  items              ProductionItem[]}
 
 model ProductionItem {
   id            Int         @id @default(autoincrement())
