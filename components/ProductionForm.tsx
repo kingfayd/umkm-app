@@ -53,7 +53,7 @@ export default function ProductionForm() {
     fetchProcurementItems();
   }, []);
 
-  const onSubmit = async (data: FormValues) => {
+  const onSubmit = async (_data: FormValues) => {
     // Tambahkan id ke setiap item
   };
 
