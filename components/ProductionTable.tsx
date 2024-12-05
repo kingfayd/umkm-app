@@ -23,30 +23,6 @@ const ProductionTable = () => {
   const [data, setData] = useState<ProductionItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("/api/production");
-        if (response.ok) {
-          const result = await response.json();
-          setData(result);
-        } else {
-          console.error("Failed to fetch production data.");
-        }
-      } catch (error) {
-        console.error("Error fetching production data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <div className="overflow-x-auto">
       <Table className="min-w-full">

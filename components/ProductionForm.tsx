@@ -67,32 +67,6 @@ export default function ProductionForm() {
         id: selectedProcurementItem?.id, // Ambil ID dari procurementItems
       };
     });
-
-    try {
-      const response = await fetch("/api/production", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          productName: data.productName,
-          productionDate: productionDateISO,
-          productionQuantity: data.productionQuantity, // Kirim jumlah produksi
-          items: itemsWithId,
-        }),
-      });
-
-      if (response.ok) {
-        alert("Produksi berhasil disimpan!");
-        reset();
-      } else {
-        const result = await response.json();
-        alert(`Error: ${result.error || "Unknown error"}`);
-      }
-    } catch (error) {
-      console.error("Error saat menyimpan produksi:", error);
-      alert("Error saat menyimpan produksi.");
-    }
   };
 
   return (
