@@ -19,7 +19,7 @@ export async function GET() {
 
     const token = tokenCookie.value;
 
-    // Verify token
+    // Verify token ok
     let decoded;
     try {
       decoded = await jwtVerify(token, SECRET);
