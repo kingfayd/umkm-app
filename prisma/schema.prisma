@@ -36,5 +36,14 @@ model User {
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   procurements Procurement[]
+  productionItems ProductionItem[]
   }
 
+model ProductionItem {
+  id            Int         @id @default(autoincrement())
+  quantity      Int
+  production    Production  @relation(fields: [productionId], references: [id])
+  productionId  Int
+  procurement   Procurement @relation(fields: [procurementId], references: [id])
+  procurementId Int
+}
