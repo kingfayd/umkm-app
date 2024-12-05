@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { jwtVerify } from "jose"; // Menggunakan 'jose' untuk verifikasi token JWT
-import { cookies } from "next/headers";
+import { cookies } from "next/headers"; // Menggunakan cookies dari Next.js
 import { MonthlyProcurement } from "@/@types/MonthlyProcurement";
 
 const SECRET = new TextEncoder().encode(
@@ -26,7 +26,7 @@ const bulanIndonesia = [
 
 export async function GET() {
   try {
-    // Mengambil token dari cookie
+    // Mengambil token dari cookie (ini hanya bisa diakses di server)
     const tokenCookie = cookies().get("authToken");
     if (!tokenCookie) {
       console.error("Token tidak ditemukan");
@@ -48,13 +48,15 @@ export async function GET() {
     // Ambil userId dari payload token
     const userId = decoded.payload.id;
     if (!userId) {
-      console.error("UserId not found in token");
-      return new NextResponse("User ID not found in token", { status: 401 });
+      console.error("UserId tidak ditemukan dalam token");
+      return new NextResponse("User ID tidak ditemukan dalam token", {
+        status: 401,
+      });
     }
 
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth(); // 0-indexed (0 = January)
+    const currentMonth = currentDate.getMonth(); // 0-indexed (0 = Januari)
 
     const monthlyTotal: MonthlyProcurement[] = [];
 
