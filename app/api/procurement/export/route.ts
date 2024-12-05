@@ -1,6 +1,6 @@
 // app/api/procurement/export/route.ts
 import { NextResponse } from "next/server";
-import prisma from "../../../../lib/prisma";
+import prisma from "@/lib/prisma";
 import { jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import pdfMake from "pdfmake/build/pdfmake";
@@ -23,7 +23,7 @@ const formatRupiah = (angka: number) => {
 
 export async function GET(req: Request) {
   try {
-    // Extract token from cookies
+    // Extract token from cookies (only server-side)
     const tokenCookie = cookies().get("authToken");
     if (!tokenCookie) {
       return new NextResponse("Token tidak ditemukan", { status: 401 });
@@ -60,7 +60,7 @@ export async function GET(req: Request) {
 
     const procurements = await prisma.procurement.findMany({
       where: {
-        userId, // Filter berdasarkan userId
+        userId,
         purchaseDate: {
           gte: new Date(startDate),
           lte: new Date(endDate),
@@ -89,7 +89,7 @@ export async function GET(req: Request) {
             text:
               item.initialQuantity === 0
                 ? "-"
-                : `${item.initialQuantity?.toString()} ${item.unit || ""}`, // Menambahkan unit
+                : `${item.initialQuantity?.toString()} ${item.unit || ""}`,
             style: "tableData",
           },
           { text: formatRupiah(item.totalPrice), style: "tableData" },
@@ -121,23 +121,10 @@ export async function GET(req: Request) {
           },
         ],
         styles: {
-          header: {
-            fontSize: 16,
-            bold: true,
-            margin: [0, 0, 0, 10],
-          },
-          subheader: {
-            fontSize: 12,
-            margin: [0, 0, 0, 10],
-          },
-          tableHeader: {
-            bold: true,
-            fontSize: 10,
-            fillColor: "#f8f9fa",
-          },
-          tableData: {
-            fontSize: 9,
-          },
+          header: { fontSize: 16, bold: true, margin: [0, 0, 0, 10] },
+          subheader: { fontSize: 12, margin: [0, 0, 0, 10] },
+          tableHeader: { bold: true, fontSize: 10, fillColor: "#f8f9fa" },
+          tableData: { fontSize: 9 },
         },
         pageMargins: [30, 15, 10, 15],
       };
@@ -180,20 +167,16 @@ export async function GET(req: Request) {
         headers: {
           "Content-Type":
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          "Content-Disposition":
-            'attachment; filename="procurement-report.xlsx"',
+          "Content-Disposition": 'attachment; filename="pengadaan.xlsx"',
         },
       });
     }
 
     return new NextResponse("Format tidak dikenali", { status: 400 });
   } catch (error) {
-    console.error("Terjadi kesalahan saat mengekspor data pengadaan:", error);
-    return new NextResponse(
-      "Terjadi kesalahan saat mengekspor data pengadaan",
-      {
-        status: 500,
-      }
-    );
+    console.error("Error during procurement export:", error);
+    return new NextResponse("Terjadi kesalahan saat memproses ekspor", {
+      status: 500,
+    });
   }
 }

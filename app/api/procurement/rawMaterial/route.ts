@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
-import prisma from "../../../../lib/prisma";
-import { jwtVerify } from "jose";
-import { cookies } from "next/headers";
+import prisma from "../../../../lib/prisma"; // Import koneksi ke database (Prisma)
+import { jwtVerify } from "jose"; // Import untuk verifikasi JWT
+import { cookies } from "next/headers"; // Mengambil cookies dari request
 
+// Secret key untuk JWT, yang akan digunakan untuk memverifikasi token
 const SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "defaultsecret"
 );
 
 export async function GET() {
   try {
-    // Ambil token dari cookie
+    // Ambil token dari cookie 'authToken'
     const tokenCookie = cookies().get("authToken");
     if (!tokenCookie) {
       return NextResponse.json(
@@ -20,7 +21,7 @@ export async function GET() {
 
     const token = tokenCookie.value;
 
-    // Verifikasi token
+    // Verifikasi token JWT
     let decoded;
     try {
       decoded = await jwtVerify(token, SECRET);
@@ -29,22 +30,22 @@ export async function GET() {
       return NextResponse.json({ error: "Token tidak valid" }, { status: 401 });
     }
 
-    // Pastikan payload dan ID tersedia
+    // Pastikan payload dan ID pengguna tersedia dalam decoded token
     const userId = decoded.payload.id;
     if (!userId) {
       return NextResponse.json(
-        { error: "ID Pengguna tidak ditemukan" },
+        { error: "ID Pengguna tidak ditemukan dalam token" },
         { status: 401 }
       );
     }
 
-    // Konversi userId ke number jika diperlukan
+    // Konversi userId menjadi number jika perlu (jika tipe data ID pengguna adalah string)
     const userIdNumber = Number(userId);
 
-    // Ambil data bahan baku dari database untuk user tertentu
+    // Ambil data bahan baku dari database (menggunakan Prisma)
     const rawMaterialItems = await prisma.procurement.findMany({
       where: {
-        userId: userIdNumber, // Gunakan userId yang sudah dikonversi ke number
+        userId: userIdNumber, // Gunakan userId yang sudah dikonversi
         category: "Bahan Baku Produksi",
       },
       select: {
@@ -54,33 +55,33 @@ export async function GET() {
         unit: true,
       },
       orderBy: {
-        id: "desc",
+        id: "desc", // Urutkan berdasarkan ID item secara menurun
       },
     });
 
-    // Kembalikan respons JSON dengan data bahan baku
+    // Kembalikan data bahan baku sebagai respons JSON
     return NextResponse.json(rawMaterialItems, {
       status: 200,
       headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-store, max-age=0",
+        "Content-Type": "application/json", // Tentukan tipe konten sebagai JSON
+        "Cache-Control": "no-store, max-age=0", // Hindari caching
       },
     });
   } catch (error) {
     console.error("Kesalahan saat mengambil item bahan baku:", error);
 
-    // Tangani error dengan lebih spesifik
+    // Menangani error lebih spesifik
     if (error instanceof Error) {
       return NextResponse.json(
         {
           error: "Gagal mengambil item bahan baku",
           details: error.message,
         },
-        { status: 500 }
+        { status: 500 } // Internal Server Error
       );
     }
 
-    // Fallback untuk error yang tidak diketahui
+    // Jika error tidak diketahui, kembalikan error generik
     return NextResponse.json(
       { error: "Kesalahan server internal" },
       { status: 500 }
