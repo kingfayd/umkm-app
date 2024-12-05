@@ -50,7 +50,8 @@ model Production {
   user               User             @relation(fields: [userId], references: [id])
 
   // Relasi ke ProductionItem
-  items              ProductionItem[]}
+  items              ProductionItem[]
+  }
 
 model ProductionItem {
   id            Int         @id @default(autoincrement())
