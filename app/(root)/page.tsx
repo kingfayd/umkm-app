@@ -126,14 +126,6 @@ export default function Home() {
           <BarChart />
         </CardContent>
 
-        {/* Data penjualan pengguna */}
-        <CardContent className="flex justify-between gap-4">
-          <section>
-            <p>Penjualan</p>
-            <p className="text-sm text-gray-400">Penjualan terkini bulan ini</p>
-          </section>
-        </CardContent>
-
         {/* Data pengadaan terkini */}
         <CardContent className="flex justify-between gap-4">
           <section>
@@ -141,6 +133,13 @@ export default function Home() {
             <p className="text-sm text-gray-400">Pengadaan terkini bulan ini</p>
           </section>
           <ProcurementRecent />
+        </CardContent>
+        {/* Data penjualan pengguna */}
+        <CardContent className="flex justify-between gap-4">
+          <section>
+            <p>Penjualan</p>
+            <p className="text-sm text-gray-400">Penjualan terkini bulan ini</p>
+          </section>
         </CardContent>
         <CardContent>
           <p className="p-4 font-semibold">Penjualan</p>
