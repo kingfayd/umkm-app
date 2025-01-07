@@ -77,7 +77,7 @@ export async function GET() {
 
     return NextResponse.json(monthlyTotal.reverse());
   } catch (error) {
-    console.error("Error fetching procurement data:", error);
-    return new NextResponse("Error fetching procurement data", { status: 500 });
+    console.error("Error mengambil data pengadaan:", error);
+    return new NextResponse("Error mengambil data pengadaan", { status: 500 });
   }
 }
