@@ -19,6 +19,7 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 
+//struktur data
 interface Item {
   id: number;
   itemName: string;
