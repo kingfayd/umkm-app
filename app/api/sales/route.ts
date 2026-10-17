@@ -98,7 +98,7 @@ export async function POST(req: Request) {
       });
     }
     if (
-      [...products.values()].some(
+      Array.from(products.values()).some(
         (item) =>
           !Number.isSafeInteger(item.quantity) ||
           item.quantity > 2147483647 ||
@@ -108,7 +108,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Sale quantity is too large" }, { status: 400 });
     }
 
-    const sortedProducts = [...products.entries()].sort(([a], [b]) => a - b);
+    const sortedProducts = Array.from(products.entries()).sort(([a], [b]) => a - b);
     const sale = await prisma.$transaction(async (tx) => {
       const productionRows = await tx.production.findMany({
         where: { id: { in: sortedProducts.map(([id]) => id) }, userId },
