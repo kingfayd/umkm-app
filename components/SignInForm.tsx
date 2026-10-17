@@ -22,22 +22,15 @@ const SignInForm = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      // Check if the response is successful
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem("authToken", data.token); // Simpan token di localStorage
-        router.push("/"); // Redirect ke home
-      }
-
-      // If sign-in is successful, get the token and user data (including userId)
       const data = await response.json();
-
-      // Store the JWT token in localStorage or sessionStorage (optional)
-      localStorage.setItem("authToken", data.token); // Or use sessionStorage if you want it to expire when the session ends
-
-      // Redirect to the home page after successful sign-in
+      if (!response.ok) {
+        setError(data.message || "Gagal masuk. Periksa email dan kata sandi.");
+        return;
+      }
+      setError(null);
       router.push("/");
     } catch (error) {
+      console.error("Error signing in:", error);
       setError("An error occurred while signing in.");
     }
   };

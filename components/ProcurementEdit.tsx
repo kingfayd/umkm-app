@@ -110,7 +110,7 @@ export default function ProcurementEdit() {
         alert("Procurement updated successfully!");
         router.push("/procurement"); // Redirect to procurement page after successful update
       } else {
-        alert(`Error: ${result.error}`);
+        alert(`Error: ${result.message || result.error || "Gagal memperbarui pengadaan."}`);
       }
     } catch (error) {
       console.error("Error saving procurement data:", error);

@@ -80,7 +80,7 @@ export default function ProcurementForm() {
         reset();
         setCategory("");
       } else {
-        alert(`Error: ${result.error}`);
+        alert(`Error: ${result.message || result.error || "Gagal menyimpan pengadaan."}`);
       }
     } catch (error) {
       console.error(error);

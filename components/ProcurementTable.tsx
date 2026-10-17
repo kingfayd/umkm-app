@@ -103,7 +103,8 @@ const ProcurementTable = () => {
         setIsDeleting(false); // Hide confirmation modal
         alert("Data berhasil dihapus!"); // Show alert after delete
       } else {
-        alert("Gagal menghapus data pengadaan.");
+        const message = await response.text();
+        alert(message || "Gagal menghapus data pengadaan.");
       }
     } catch (error) {
       console.error("Error deleting procurement:", error);

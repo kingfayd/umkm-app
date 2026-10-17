@@ -12,8 +12,8 @@ model Procurement {
   id              Int              @id @default(autoincrement())
   category        String
   itemName        String
-  unitPrice       Float
-  totalPrice      Float
+  unitPrice       Decimal          @db.Decimal(12, 2)
+  totalPrice      Decimal          @db.Decimal(12, 2)
   unit            String?
   supplierName    String?
   purchaseDate    DateTime
@@ -38,7 +38,8 @@ model User {
   updatedAt DateTime     @updatedAt
   procurements Procurement[]
   productions Production[]
-  }
+  sales       Sale[]
+}
 
 model Production {
   id                 Int              @id @default(autoincrement())
@@ -52,7 +53,8 @@ model Production {
 
   // Relasi ke ProductionItem
   items              ProductionItem[]
-  }
+  saleItems          SaleItem[]
+}
 
 model ProductionItem {
   id            Int         @id @default(autoincrement())
@@ -61,4 +63,26 @@ model ProductionItem {
   productionId  Int
   procurement   Procurement @relation(fields: [procurementId], references: [id])
   procurementId Int
+}
+
+model Sale {
+  id          Int        @id @default(autoincrement())
+  createdAt   DateTime   @default(now())
+  totalAmount Decimal    @db.Decimal(12, 2)
+  userId      Int
+  user        User       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  items       SaleItem[]
+}
+
+model SaleItem {
+  id           Int       @id @default(autoincrement())
+  productName  String
+  quantity     Int
+  unitPrice    Decimal   @db.Decimal(12, 2)
+  saleId       Int
+  sale         Sale      @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productionId Int
+  production   Production @relation(fields: [productionId], references: [id], onDelete: Restrict)
+
+  @@unique([saleId, productionId])
 }
