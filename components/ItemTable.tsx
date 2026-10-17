@@ -33,6 +33,10 @@ const ItemTable = () => {
   // Modifikasi fetcher untuk mengembalikan data JSON
   const fetcher = async (url: string) => {
     const response = await fetchWithAuth(url);
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(message || "Gagal memuat daftar bahan");
+    }
     return response.json();
   };
 
@@ -95,7 +99,11 @@ const ItemTable = () => {
   }
 
   if (error) {
-    return <div className="text-red-500">{error}</div>;
+    return (
+      <div className="text-red-500">
+        Gagal memuat daftar bahan: {error.message}
+      </div>
+    );
   }
 
   return (
