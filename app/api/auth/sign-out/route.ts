@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AUTH_COOKIE_NAME, AUTH_COOKIE_MAX_AGE } from "../../../../lib/auth";
+import { AUTH_COOKIE_NAME } from "../../../../lib/auth";
 
 export async function POST() {
   const response = NextResponse.json(
