@@ -1,142 +1,163 @@
 "use client";
 
-import { useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { useFieldArray, useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import Input from "@/components/ui/input";
 
-interface ProcurementItem {
+interface RawMaterial {
   id: number;
-  item_name: string;
-  quantity: number;
+  itemName: string;
+  currentQuantity: number;
+  unit: string | null;
 }
 
 interface FormValues {
   productName: string;
-  productionDate: Date;
+  productionDate: string;
   productionQuantity: number;
-  items: { id: number; item_name: string; quantity: number }[];
+  items: { id: number; quantity: number }[];
 }
 
 export default function ProductionForm() {
+  const [materials, setMaterials] = useState<RawMaterial[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const {
     register,
     handleSubmit,
     control,
+    reset,
     formState: { errors },
-  } = useForm<FormValues>();
+  } = useForm<FormValues>({ defaultValues: { items: [] } });
+  const { fields, append, remove } = useFieldArray({ control, name: "items" });
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "items",
-  });
+  useEffect(() => {
+    fetch("/api/procurement/rawMaterial", {
+      credentials: "include",
+      cache: "no-store",
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Gagal memuat daftar bahan baku.");
+        setMaterials(await response.json());
+      })
+      .catch((loadError: unknown) => {
+        console.error("Error fetching raw materials:", loadError);
+        setError("Gagal memuat daftar bahan baku.");
+      });
+  }, []);
 
-  const [procurementItems] = useState<ProcurementItem[]>([
-    // Contoh data untuk procurement items, Anda bisa sesuaikan dengan data nyata
-    { id: 1, item_name: "Bahan A", quantity: 100 },
-    { id: 2, item_name: "Bahan B", quantity: 50 },
-    { id: 3, item_name: "Bahan C", quantity: 200 },
-  ]);
+  const onSubmit = async (data: FormValues) => {
+    setSaving(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/production", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || result.error || "Gagal menyimpan produksi.");
 
-  const onSubmit = async (_data: FormValues) => {
-    // Tambahkan logic untuk mengirim data jika diperlukan
-    console.log("Form submitted with data: ", _data);
+      reset({ items: [] });
+      window.dispatchEvent(new Event("production-created"));
+      const materialsResponse = await fetch("/api/procurement/rawMaterial", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (materialsResponse.ok) setMaterials(await materialsResponse.json());
+    } catch (submitError) {
+      console.error("Error saving production:", submitError);
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Gagal menyimpan produksi."
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      {error && <p role="alert" className="text-red-500">{error}</p>}
       <Input
         label="Nama Produk"
         id="productName"
         placeholder="Nama Produk"
-        {...register("productName", {
-          required: "Nama produk diperlukan",
-        })}
-        error={
-          errors.productName
-            ? { message: errors.productName.message }
-            : undefined
-        }
+        {...register("productName", { required: "Nama produk diperlukan" })}
+        error={errors.productName ? { message: errors.productName.message } : undefined}
       />
-
       <Input
         label="Tanggal Produksi"
         id="productionDate"
         type="date"
-        {...register("productionDate", {
-          required: "Tanggal produksi diperlukan",
-        })}
-        error={
-          errors.productionDate
-            ? { message: errors.productionDate.message }
-            : undefined
-        }
+        {...register("productionDate", { required: "Tanggal produksi diperlukan" })}
+        error={errors.productionDate ? { message: errors.productionDate.message } : undefined}
       />
-
       <Input
         label="Jumlah Produksi"
         id="productionQuantity"
         type="number"
-        placeholder="Jumlah Produksi"
+        min={1}
+        step={1}
         {...register("productionQuantity", {
           required: "Jumlah produksi diperlukan",
           valueAsNumber: true,
-          validate: (value) => value > 0 || "Jumlah harus lebih besar dari 0",
+          validate: (value) =>
+            (Number.isSafeInteger(value) && value > 0) ||
+            "Jumlah harus bilangan bulat lebih besar dari 0",
         })}
-        error={
-          errors.productionQuantity
-            ? { message: errors.productionQuantity.message }
-            : undefined
-        }
+        error={errors.productionQuantity ? { message: errors.productionQuantity.message } : undefined}
       />
 
       {fields.map((field, index) => (
-        <div key={field.id} className="flex gap-4 items-center">
-          <div>
+        <div key={field.id} className="flex items-center gap-4">
+          <div className="flex-1">
+            <label htmlFor={`items.${index}.id`} className="mb-2 block">
+              Bahan Baku
+            </label>
             <select
-              {...register(`items.${index}.item_name`, {
-                required: "Pilih bahan yang akan digunakan",
+              id={`items.${index}.id`}
+              {...register(`items.${index}.id`, {
+                required: "Pilih bahan baku",
+                valueAsNumber: true,
+                validate: (value) => value > 0 || "Pilih bahan baku",
               })}
-              className="border p-2 rounded"
+              className="w-full rounded border p-2"
             >
-              <option value="">Pilih Bahan</option>
-              {procurementItems.map((item) => (
-                <option key={item.id} value={item.item_name}>
-                  {item.item_name} (Stok: {item.quantity})
+              <option value="">Pilih bahan</option>
+              {materials.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.itemName} (Stok: {item.currentQuantity} {item.unit ?? ""})
                 </option>
               ))}
             </select>
-            {errors.items?.[index]?.item_name && (
-              <p className="text-red-500 text-sm">
-                {errors.items[index].item_name?.message}
-              </p>
+            {errors.items?.[index]?.id && (
+              <p className="text-sm text-red-500">{errors.items[index]?.id?.message}</p>
             )}
           </div>
-
           <Input
-            label={`Jumlah bahan ${index + 1}`}
+            label="Jumlah bahan"
             id={`items.${index}.quantity`}
             type="number"
-            placeholder="Jumlah"
-            min={0}
+            min={1}
+            step={1}
             {...register(`items.${index}.quantity`, {
-              required: "Jumlah yang digunakan diperlukan",
+              required: "Jumlah bahan diperlukan",
               valueAsNumber: true,
               validate: (value) =>
-                value > 0 || "Jumlah harus lebih besar dari 0",
+                (Number.isSafeInteger(value) && value > 0) ||
+                "Jumlah harus bilangan bulat lebih besar dari 0",
             })}
             error={
               errors.items?.[index]?.quantity
-                ? { message: errors.items[index].quantity?.message }
+                ? { message: errors.items[index]?.quantity?.message }
                 : undefined
             }
           />
-
-          <Button
-            type="button"
-            onClick={() => remove(index)}
-            className="bg-red-500"
-          >
+          <Button type="button" onClick={() => remove(index)} className="bg-red-500">
             Hapus
           </Button>
         </div>
@@ -144,13 +165,13 @@ export default function ProductionForm() {
 
       <Button
         type="button"
-        onClick={() => append({ id: 0, item_name: "", quantity: 0 })}
+        onClick={() => append({ id: 0, quantity: 1 })}
+        disabled={!materials.length}
       >
         Tambah Bahan
       </Button>
-
-      <Button type="submit" variant="default">
-        Simpan Produksi
+      <Button type="submit" disabled={saving}>
+        {saving ? "Menyimpan..." : "Simpan Produksi"}
       </Button>
     </form>
   );

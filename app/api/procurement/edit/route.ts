@@ -1,151 +1,170 @@
-// app/api/procurement/edit/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { jwtVerify } from "jose";
-import { cookies } from "next/headers";
+import { getAuthenticatedUserId } from "@/lib/auth";
+import { serializeProcurement } from "@/lib/serializers";
 
-// Secret key untuk verifikasi JWT
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "defaultsecret"
-);
-
-// Tandai route sebagai dynamic
 export const dynamic = "force-dynamic";
 
-// Fungsi untuk mengambil data pengadaan berdasarkan ID
 export async function GET(req: Request) {
   try {
-    // Mendapatkan ID dari URL
-    const url = new URL(req.url);
-    const id = url.searchParams.get("id");
-
-    if (!id) {
-      return new NextResponse("ID pengadaan tidak diberikan", { status: 400 });
-    }
-
-    // Ambil token dari cookie
-    const tokenCookie = cookies().get("authToken");
-    if (!tokenCookie) {
-      return new NextResponse("Token tidak ditemukan", { status: 401 });
-    }
-
-    const token = tokenCookie.value;
-
-    // Verifikasi token
-    let decoded;
-    try {
-      decoded = await jwtVerify(token, SECRET);
-    } catch (err) {
-      console.error("Token tidak valid:", err);
-      return new NextResponse("Token tidak valid", { status: 401 });
-    }
-
-    const userId = decoded.payload.id;
+    const userId = await getAuthenticatedUserId();
     if (!userId) {
-      return new NextResponse("User ID tidak ditemukan di token", {
-        status: 401,
-      });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    // Ambil data pengadaan berdasarkan ID
-    const procurementData = await prisma.procurement.findUnique({
-      where: {
-        id: Number(id), // Pastikan ID adalah angka
-      },
+    const id = Number(new URL(req.url).searchParams.get("id"));
+    if (!Number.isSafeInteger(id) || id < 1) {
+      return NextResponse.json({ message: "Valid ID is required" }, { status: 400 });
+    }
+
+    const procurement = await prisma.procurement.findFirst({
+      where: { id, userId },
     });
-
-    if (!procurementData) {
-      return new NextResponse("Data pengadaan tidak ditemukan", {
-        status: 404,
-      });
+    if (!procurement) {
+      return NextResponse.json(
+        { message: "Data pengadaan tidak ditemukan" },
+        { status: 404 }
+      );
     }
 
-    // Pastikan menggunakan initialQuantity
-    const result = {
-      ...procurementData,
-      quantity: procurementData.initialQuantity, // Menambahkan field quantity dari initialQuantity
-      purchaseDate: procurementData.purchaseDate.toISOString().split("T")[0], // Pastikan format tanggal sesuai dengan input date
-    };
-
-    return NextResponse.json(result, { status: 200 });
+    return NextResponse.json({
+      ...serializeProcurement(procurement),
+      quantity: procurement.initialQuantity,
+      purchaseDate: procurement.purchaseDate.toISOString().split("T")[0],
+    });
   } catch (error) {
     console.error("Error fetching procurement data:", error);
-    return new NextResponse("Error fetching procurement data", { status: 500 });
+    return NextResponse.json(
+      { message: "Error fetching procurement data" },
+      { status: 500 }
+    );
   }
 }
 
-// Fungsi untuk memperbarui data pengadaan
 export async function PUT(req: Request) {
   try {
-    const data: {
-      id: number;
-      category?: string;
-      itemName?: string;
-      quantity?: string | number;
-      unit?: string;
-      totalPrice?: string | number;
-      supplierName?: string;
-      purchaseDate?: string;
-    } = await req.json();
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
 
-    console.log("Data received for update:", data);
-
-    const {
-      id,
-      category,
-      itemName,
-      quantity,
-      unit,
-      totalPrice,
-      supplierName,
-      purchaseDate,
-    } = data;
-
-    // Validasi input
-    if (!id || !category || !purchaseDate || totalPrice == null) {
-      return new NextResponse(
-        "ID, category, purchaseDate, and totalPrice are required",
+    const body: unknown = await req.json();
+    if (!body || typeof body !== "object") {
+      return NextResponse.json(
+        { message: "Invalid request body" },
         { status: 400 }
       );
     }
 
-    const parsedQuantity = quantity ? Number(quantity) : null;
-    const parsedTotalPrice = Number(totalPrice);
-
+    const input = body as Record<string, unknown>;
+    const id = Number(input.id);
+    const { category, itemName, quantity, unit, totalPrice, supplierName, purchaseDate } = input;
     if (
-      isNaN(parsedTotalPrice) ||
-      (parsedQuantity !== null && isNaN(parsedQuantity))
+      !Number.isSafeInteger(id) || id < 1 ||
+      typeof category !== "string" || !category.trim() ||
+      typeof purchaseDate !== "string" ||
+      (typeof totalPrice !== "number" && typeof totalPrice !== "string")
     ) {
-      console.warn("Invalid quantity or totalPrice format");
-      return new NextResponse("Quantity and totalPrice must be valid numbers", {
-        status: 400,
-      });
+      return NextResponse.json(
+        { message: "ID, category, purchaseDate, and totalPrice are required" },
+        { status: 400 }
+      );
+    }
+
+    const parsedQuantity =
+      quantity == null || quantity === "" ? null : Number(quantity);
+    const parsedTotalPrice = Number(totalPrice);
+    if (
+      !Number.isFinite(parsedTotalPrice) || parsedTotalPrice < 0 ||
+      parsedTotalPrice > 9999999999.99 ||
+      (parsedQuantity !== null &&
+        (!Number.isSafeInteger(parsedQuantity) ||
+          parsedQuantity < 0 ||
+          parsedQuantity > 2147483647))
+    ) {
+      return NextResponse.json(
+        { message: "Quantity and totalPrice must be valid non-negative numbers" },
+        { status: 400 }
+      );
     }
 
     const parsedPurchaseDate = new Date(purchaseDate);
-    if (isNaN(parsedPurchaseDate.getTime())) {
-      console.warn("Invalid purchaseDate format");
-      return new NextResponse("Invalid purchaseDate format", { status: 400 });
+    if (Number.isNaN(parsedPurchaseDate.getTime())) {
+      return NextResponse.json(
+        { message: "Invalid purchaseDate format" },
+        { status: 400 }
+      );
     }
 
-    // Update procurement data in the database
-    const updatedProcurement = await prisma.procurement.update({
-      where: { id },
-      data: {
-        category,
-        itemName,
-        initialQuantity: parsedQuantity ?? undefined,
-        currentQuantity: parsedQuantity ?? undefined,
-        unit: unit ?? null,
-        totalPrice: parsedTotalPrice,
-        supplierName: supplierName ?? null,
-        purchaseDate: parsedPurchaseDate,
-      },
-    });
+    const updateResult = await prisma.$transaction(async (tx) => {
+      const existing = await tx.procurement.findFirst({
+        where: { id, userId },
+        select: { initialQuantity: true },
+      });
+      if (!existing) return "not-found" as const;
 
-    return NextResponse.json(updatedProcurement, { status: 200 });
+      const quantityDelta =
+        parsedQuantity === null
+          ? null
+          : parsedQuantity - existing.initialQuantity;
+      const updated = await tx.procurement.updateMany({
+        where: {
+          id,
+          userId,
+          ...(quantityDelta !== null
+            ? {
+                initialQuantity: existing.initialQuantity,
+                currentQuantity: { gte: Math.max(0, -quantityDelta) },
+              }
+            : {}),
+        },
+        data: {
+          category: category.trim(),
+          ...(typeof itemName === "string" ? { itemName: itemName.trim() } : {}),
+          ...(parsedQuantity !== null && quantityDelta !== null
+            ? {
+                initialQuantity: parsedQuantity,
+                currentQuantity: { increment: quantityDelta },
+              }
+            : {}),
+          unit: typeof unit === "string" && unit ? unit : null,
+          totalPrice: parsedTotalPrice.toFixed(2),
+          supplierName:
+            typeof supplierName === "string" && supplierName.trim()
+              ? supplierName.trim()
+              : null,
+          purchaseDate: parsedPurchaseDate,
+        },
+      });
+      return updated.count === 1 ? ("updated" as const) : ("conflict" as const);
+    });
+    if (updateResult === "not-found") {
+      return NextResponse.json(
+        { message: "Data pengadaan tidak ditemukan" },
+        { status: 404 }
+      );
+    }
+    if (updateResult === "conflict") {
+      return NextResponse.json(
+        { message: "Stok berubah atau tidak cukup untuk menurunkan jumlah pengadaan" },
+        { status: 409 }
+      );
+    }
+
+    const procurement = await prisma.procurement.findFirst({
+      where: { id, userId },
+    });
+    return procurement
+      ? NextResponse.json(serializeProcurement(procurement))
+      : NextResponse.json(
+          { message: "Data pengadaan tidak ditemukan" },
+          { status: 404 }
+        );
   } catch (error) {
     console.error("Error updating procurement data:", error);
-    return new NextResponse("Error updating procurement data", { status: 500 });
+    return NextResponse.json(
+      { message: "Error updating procurement data" },
+      { status: 500 }
+    );
   }
 }

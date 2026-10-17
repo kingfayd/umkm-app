@@ -1,54 +1,50 @@
-/** @format */
-
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma"; // Pastikan Anda sudah mengonfigurasi prisma dengan benar
+import prisma from "@/lib/prisma";
+import { getAuthenticatedUserId } from "@/lib/auth";
+
+const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    // Mendapatkan tanggal terkini
-    const currentDate = new Date();
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth(); // 0 - 11
+    const userId = await getAuthenticatedUserId();
+    if (!userId) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-    // Mengambil total pengadaan bulan terkini
-    const totalProcurement = await prisma.procurement.aggregate({
-      _sum: {
-        totalPrice: true,
-      },
+    const now = new Date();
+    const total = await prisma.procurement.aggregate({
+      _sum: { totalPrice: true },
       where: {
+        userId,
         purchaseDate: {
-          gte: new Date(year, month, 1), // Awal bulan terkini
-          lt: new Date(year, month + 1, 1), // Awal bulan berikutnya
+          gte: new Date(now.getFullYear(), now.getMonth(), 1),
+          lt: new Date(now.getFullYear(), now.getMonth() + 1, 1),
         },
       },
     });
-
-    // Mengambil nama bulan
-    const monthNames = [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December",
-    ];
-    const currentMonthName = monthNames[month];
-
     return NextResponse.json({
-      total: totalProcurement._sum.totalPrice || 0,
-      month: currentMonthName,
-      year,
+      total: Number(total._sum.totalPrice ?? 0),
+      month: monthNames[now.getMonth()],
+      year: now.getFullYear(),
     });
   } catch (error) {
     console.error("Error fetching total procurement:", error);
-    return NextResponse.error();
+    return NextResponse.json(
+      { message: "Unable to fetch procurement total" },
+      { status: 500 }
+    );
   }
 }
-// Export this to indicate the route is dynamic
-export const dynamic = "force-dynamic";

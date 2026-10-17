@@ -1,199 +1,142 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../lib/prisma";
-import { jwtVerify } from "jose";
-import { cookies } from "next/headers";
+import { getAuthenticatedUserId } from "@/lib/auth";
+import { serializeProcurement } from "@/lib/serializers";
 
-// JWT Secret key
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "defaultsecret"
-);
-
-// GET - Fetch procurement data for authenticated user
 export async function GET() {
   try {
-    // Retrieve token from cookie
-    const tokenCookie = cookies().get("authToken");
-    if (!tokenCookie) {
-      return new NextResponse("Token not provided", { status: 401 });
-    }
-
-    const token = tokenCookie.value;
-
-    // Verify token ok
-    let decoded;
-    try {
-      decoded = await jwtVerify(token, SECRET);
-    } catch (err) {
-      console.error("Invalid token:", err);
-      return new NextResponse("Invalid token", { status: 401 });
-    }
-
-    const userId = decoded.payload.id;
+    const userId = await getAuthenticatedUserId();
     if (!userId) {
-      return new NextResponse("User ID not found in token", { status: 401 });
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
-
-    // Fetch procurement data from DB for the specific user
     const procurementData = await prisma.procurement.findMany({
       where: { userId },
+      orderBy: { purchaseDate: "desc" },
     });
-
-    return NextResponse.json(procurementData, { status: 200 });
+    return NextResponse.json(procurementData.map(serializeProcurement));
   } catch (error) {
     console.error("Error fetching procurement data:", error);
     return new NextResponse("Error fetching procurement data", { status: 500 });
   }
 }
 
-// POST - Save new procurement data to the database
 export async function POST(req: Request) {
   try {
-    const data: {
-      category?: string;
-      itemName?: string;
-      quantity?: string | number;
-      unit?: string;
-      totalPrice?: string | number;
-      supplierName?: string;
-      purchaseDate?: string;
-    } = await req.json();
-
-    const tokenCookie = cookies().get("authToken");
-    if (!tokenCookie) {
-      return new NextResponse("Token not provided", { status: 401 });
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const token = tokenCookie.value;
-
-    let decoded;
-    try {
-      decoded = await jwtVerify(token, SECRET);
-    } catch (err) {
-      console.error("Invalid token:", err);
-      return new NextResponse("Invalid token", { status: 401 });
+    const data: unknown = await req.json();
+    if (!data || typeof data !== "object") {
+      return NextResponse.json(
+        { message: "Invalid request body" },
+        { status: 400 }
+      );
     }
+    const input = data as Record<string, unknown>;
+    const { category, itemName, quantity, totalPrice, supplierName, purchaseDate, unit } = input;
 
-    const userId = decoded.payload.id;
-    if (!userId || typeof userId !== "number") {
-      return new NextResponse("Invalid token: userId not found", {
-        status: 401,
-      });
-    }
-
-    const {
-      category,
-      itemName,
-      quantity,
-      totalPrice,
-      supplierName,
-      purchaseDate,
-    } = data;
-
-    if (!category || !purchaseDate || totalPrice == null) {
-      return new NextResponse(
-        "Category, purchaseDate, and unitPrice are required",
+    if (
+      typeof category !== "string" || !category.trim() ||
+      typeof purchaseDate !== "string" ||
+      (typeof totalPrice !== "number" && typeof totalPrice !== "string")
+    ) {
+      return NextResponse.json(
+        { message: "Category, purchaseDate, and totalPrice are required" },
         { status: 400 }
       );
     }
 
-    const parsedQuantity = quantity ? Number(quantity) : null;
-    const parsedUnitPrice = Number(totalPrice);
-
+    const parsedQuantity = quantity == null || quantity === "" ? null : Number(quantity);
+    const parsedTotalPrice = Number(totalPrice);
     if (
-      isNaN(parsedUnitPrice) ||
-      (parsedQuantity !== null && isNaN(parsedQuantity))
+      !Number.isFinite(parsedTotalPrice) || parsedTotalPrice < 0 ||
+      parsedTotalPrice > 9999999999.99 ||
+      (parsedQuantity !== null &&
+        (!Number.isSafeInteger(parsedQuantity) ||
+          parsedQuantity < 0 ||
+          parsedQuantity > 2147483647))
     ) {
-      console.warn("Invalid quantity or unitPrice format");
-      return new NextResponse("Quantity and unit price must be valid numbers", {
-        status: 400,
-      });
+      return NextResponse.json(
+        { message: "Quantity and total price must be valid non-negative numbers" },
+        { status: 400 }
+      );
     }
 
     const parsedPurchaseDate = new Date(purchaseDate);
-    if (isNaN(parsedPurchaseDate.getTime())) {
-      console.warn("Invalid purchaseDate format");
-      return new NextResponse("Invalid purchaseDate", { status: 400 });
+    if (Number.isNaN(parsedPurchaseDate.getTime())) {
+      return NextResponse.json(
+        { message: "Invalid purchaseDate" },
+        { status: 400 }
+      );
     }
 
     const procurement = await prisma.procurement.create({
       data: {
-        category,
-        itemName: itemName ?? "",
+        category: category.trim(),
+        itemName: typeof itemName === "string" ? itemName.trim() : "",
         initialQuantity: parsedQuantity ?? undefined,
         currentQuantity: parsedQuantity ?? undefined,
-        unit: data.unit ?? null,
+        unit: typeof unit === "string" && unit ? unit : null,
         unitPrice: 0,
-        totalPrice: parsedUnitPrice,
-        supplierName: supplierName ?? null,
+        totalPrice: parsedTotalPrice.toFixed(2),
+        supplierName: typeof supplierName === "string" && supplierName.trim()
+          ? supplierName.trim()
+          : null,
         purchaseDate: parsedPurchaseDate,
         userId,
       },
     });
 
-    return NextResponse.json(procurement, { status: 201 });
+    return NextResponse.json(serializeProcurement(procurement), { status: 201 });
   } catch (error) {
     console.error("Error saving procurement:", error);
-    return new NextResponse("Error saving procurement", { status: 500 });
+    return NextResponse.json(
+      { message: "Error saving procurement" },
+      { status: 500 }
+    );
   }
 }
 
-// DELETE - Delete procurement data by ID
 export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
-    const id = url.searchParams.get("id");
-
-    if (!id) {
-      return new NextResponse("ID not provided", { status: 400 });
+    const id = Number(url.searchParams.get("id"));
+    if (!Number.isSafeInteger(id) || id < 1) {
+      return new NextResponse("Valid ID is required", { status: 400 });
     }
+    const userId = await getAuthenticatedUserId();
+    if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
-    const tokenCookie = cookies().get("authToken");
-    if (!tokenCookie) {
-      return new NextResponse("Token not provided", { status: 401 });
-    }
+    const result = await prisma.$transaction(async (tx) => {
+      const procurement = await tx.procurement.findFirst({
+        where: { id, userId },
+        select: { id: true },
+      });
+      if (!procurement) return "not-found" as const;
 
-    const token = tokenCookie.value;
+      const hasProductionHistory = await tx.productionItem.findFirst({
+        where: { procurementId: id },
+        select: { id: true },
+      });
+      if (hasProductionHistory) return "in-use" as const;
 
-    let decoded;
-    try {
-      decoded = await jwtVerify(token, SECRET);
-    } catch (err) {
-      console.error("Invalid token:", err);
-      return new NextResponse("Invalid token", { status: 401 });
-    }
-
-    const userId = decoded.payload.id;
-    if (!userId) {
-      return new NextResponse("User ID not found in token", { status: 401 });
-    }
-
-    // Delete related production items first (to avoid foreign key constraint violation)
-    await prisma.productionItem.deleteMany({
-      where: {
-        procurementId: Number(id),
-      },
+      await tx.procurement.delete({ where: { id } });
+      return "deleted" as const;
     });
 
-    // Delete procurement record
-    const procurement = await prisma.procurement.deleteMany({
-      where: {
-        id: Number(id),
-        userId: userId, // Ensure only the authorized user can delete
-      },
-    });
-
-    if (procurement.count === 0) {
+    if (result === "not-found") {
       return new NextResponse("Data not found or you don't have permission", {
         status: 404,
       });
     }
-
-    return NextResponse.json(
-      { message: "Data successfully deleted" },
-      {
-        status: 200,
-      }
-    );
+    if (result === "in-use") {
+      return new NextResponse("Procurement referenced by production history cannot be deleted", {
+        status: 409,
+      });
+    }
+    return NextResponse.json({ message: "Data successfully deleted" });
   } catch (error) {
     console.error("Error deleting procurement:", error);
     return new NextResponse("Error deleting procurement", { status: 500 });

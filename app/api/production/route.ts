@@ -1,164 +1,154 @@
 import { NextResponse } from "next/server";
-import prisma from "../../../lib/prisma";
-import { jwtVerify } from "jose";
-import { cookies } from "next/headers";
+import prisma from "@/lib/prisma";
+import { getAuthenticatedUserId } from "@/lib/auth";
 
-// Mendeklarasikan secret key untuk JWT
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "defaultsecret"
-);
-
-// GET: Mengambil data produksi dan detail items beserta procurement
 export async function GET() {
   try {
-    const tokenCookie = cookies().get("authToken");
-    if (!tokenCookie) {
-      return new NextResponse("Token not provided", { status: 401 });
-    }
+    const userId = await getAuthenticatedUserId();
+    if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
-    const token = tokenCookie.value;
-
-    // Verifikasi dan dekode token
-    let decoded;
-    try {
-      decoded = await jwtVerify(token, SECRET);
-    } catch (err) {
-      console.error("Invalid token:", err);
-      return new NextResponse("Invalid token", { status: 401 });
-    }
-
-    const userId = decoded.payload.id;
-    if (!userId || typeof userId !== "number") {
-      return new NextResponse("Invalid token: userId not found", {
-        status: 401,
-      });
-    }
-
-    // Mendapatkan data produksi hanya untuk user yang sedang login
     const productions = await prisma.production.findMany({
-      where: { userId }, // Filter berdasarkan userId
+      where: { userId },
       include: {
         items: {
-          include: {
-            procurement: true,
-          },
+          where: { procurement: { is: { userId } } },
+          include: { procurement: { select: { itemName: true } } },
         },
       },
+      orderBy: { productionDate: "desc" },
     });
-
-    const formattedProductions = productions.map((production) => ({
-      id: production.id,
-      productName: production.productName,
-      productionDate: production.productionDate.toISOString(),
-      productionQuantity: production.productionQuantity,
-      items: production.items.map((item) => ({
-        itemName: item.procurement.itemName,
-        quantity: item.quantity,
-      })),
-    }));
-
-    return NextResponse.json(formattedProductions);
+    return NextResponse.json(
+      productions.map((production) => ({
+        id: production.id,
+        productName: production.productName,
+        productionDate: production.productionDate.toISOString(),
+        productionQuantity: production.productionQuantity,
+        items: production.items.map((item) => ({
+          itemName: item.procurement.itemName,
+          quantity: item.quantity,
+        })),
+      }))
+    );
   } catch (error) {
     console.error("Error fetching production data:", error);
     return new NextResponse("Error fetching production data", { status: 500 });
   }
 }
 
-// POST: Menambahkan data produksi baru
 export async function POST(req: Request) {
   try {
-    // Mengambil token dari cookie
-    const tokenCookie = cookies().get("authToken");
-    if (!tokenCookie) {
-      return new NextResponse("Token not provided", { status: 401 });
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const token = tokenCookie.value;
-
-    // Verifikasi dan dekode token
-    let decoded;
-    try {
-      decoded = await jwtVerify(token, SECRET);
-    } catch (err) {
-      console.error("Invalid token:", err);
-      return new NextResponse("Invalid token", { status: 401 });
+    const body: unknown = await req.json();
+    if (!body || typeof body !== "object") {
+      return NextResponse.json(
+        { message: "Invalid request body" },
+        { status: 400 }
+      );
     }
 
-    const userId = decoded.payload.id;
-    if (!userId || typeof userId !== "number") {
-      return new NextResponse("Invalid token: userId not found", {
-        status: 401,
-      });
-    }
-
-    // Mendapatkan data dari request body
-    const { items, productionDate, productName, productionQuantity } =
-      await req.json();
-
-    // Validasi input
+    const input = body as Record<string, unknown>;
+    const { items, productionDate, productName, productionQuantity } = input;
     if (
-      !items ||
+      typeof productName !== "string" || !productName.trim() ||
+      typeof productionDate !== "string" ||
+      typeof productionQuantity !== "number" ||
+      !Number.isSafeInteger(productionQuantity) ||
+      Number(productionQuantity) < 1 ||
+      Number(productionQuantity) > 2147483647 ||
+      !Array.isArray(items) ||
       items.length === 0 ||
-      !productionDate ||
-      !productName ||
-      productionQuantity == null
-    ) {
-      return new NextResponse(
-        JSON.stringify({ error: "All fields are required, including userId" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Parsing dan validasi tanggal produksi
-    const parsedProductionDate = new Date(productionDate);
-    if (isNaN(parsedProductionDate.getTime())) {
-      return new NextResponse(
-        JSON.stringify({ error: "Invalid productionDate" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Membuat produksi baru dengan menghubungkan userId
-    const production = await prisma.production.create({
-      data: {
-        productName,
-        productionDate: parsedProductionDate,
-        productionQuantity,
-        userId, // Menambahkan userId yang diterima dari token
-        items: {
-          create: items.map((item: { id: number; quantity: number }) => ({
-            quantity: item.quantity,
-            procurement: {
-              connect: { id: item.id },
-            },
-          })),
-        },
-      },
-      include: {
-        items: true,
-      },
-    });
-
-    // Update quantity procurement setelah produksi
-    await Promise.all(
-      items.map((item: { id: number; quantity: number }) =>
-        prisma.procurement.update({
-          where: { id: item.id },
-          data: {
-            currentQuantity: {
-              decrement: item.quantity, // Mengurangi jumlah yang ada di procurement
-            },
-          },
-        })
+      items.length > 100 ||
+      items.some(
+        (item) =>
+          !item ||
+          typeof item !== "object" ||
+          typeof (item as Record<string, unknown>).id !== "number" ||
+          !Number.isSafeInteger((item as Record<string, unknown>).id) ||
+          Number((item as Record<string, unknown>).id) < 1 ||
+          typeof (item as Record<string, unknown>).quantity !== "number" ||
+          !Number.isSafeInteger((item as Record<string, unknown>).quantity) ||
+          Number((item as Record<string, unknown>).quantity) < 1 ||
+          Number((item as Record<string, unknown>).quantity) > 2147483647
       )
-    );
+    ) {
+      return NextResponse.json(
+        { message: "Invalid production details" },
+        { status: 400 }
+      );
+    }
+
+    const parsedDate = new Date(productionDate);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return NextResponse.json(
+        { message: "Invalid productionDate" },
+        { status: 400 }
+      );
+    }
+
+    const quantities = new Map<number, number>();
+    for (const item of items as { id: number; quantity: number }[]) {
+      quantities.set(item.id, (quantities.get(item.id) ?? 0) + item.quantity);
+    }
+    if ([...quantities.values()].some((quantity) => quantity > 2147483647)) {
+      return NextResponse.json(
+        { message: "Material quantity is too large" },
+        { status: 400 }
+      );
+    }
+    const orderedItems = [...quantities.entries()].sort(([a], [b]) => a - b);
+
+    const production = await prisma.$transaction(async (tx) => {
+      for (const [procurementId, quantity] of orderedItems) {
+        const update = await tx.procurement.updateMany({
+          where: {
+            id: procurementId,
+            userId,
+            category: "Bahan Baku Produksi",
+            currentQuantity: { gte: quantity },
+          },
+          data: { currentQuantity: { decrement: quantity } },
+        });
+        if (update.count !== 1) {
+          throw new Error("INSUFFICIENT_OR_INVALID_STOCK");
+        }
+      }
+
+      return tx.production.create({
+        data: {
+          productName: productName.trim(),
+          productionDate: parsedDate,
+          productionQuantity: Number(productionQuantity),
+          userId,
+          items: {
+            create: orderedItems.map(([procurementId, quantity]) => ({
+              quantity,
+              procurement: { connect: { id: procurementId } },
+            })),
+          },
+        },
+        include: { items: true },
+      });
+    });
 
     return NextResponse.json(production, { status: 201 });
   } catch (error) {
+    if (error instanceof Error && error.message === "INSUFFICIENT_OR_INVALID_STOCK") {
+      return NextResponse.json(
+        {
+          message:
+            "A selected raw material is unavailable or has insufficient stock",
+        },
+        { status: 409 }
+      );
+    }
     console.error("Error saving production:", error);
-    return new NextResponse(
-      JSON.stringify({ error: "Error saving production" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
+    return NextResponse.json(
+      { message: "Error saving production" },
+      { status: 500 }
     );
   }
 }
