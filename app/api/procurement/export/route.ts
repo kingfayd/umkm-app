@@ -1,18 +1,13 @@
 // app/api/procurement/export/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { jwtVerify } from "jose";
-import { cookies } from "next/headers";
+import { getAuthenticatedUserId } from "@/lib/auth";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import * as XLSX from "xlsx";
 
 // Register fonts
 (pdfMake as any).vfs = (pdfFonts as any).pdfMake.vfs;
-
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "defaultsecret"
-);
 
 const formatRupiah = (angka: number) => {
   return new Intl.NumberFormat("id-ID", {
@@ -23,29 +18,8 @@ const formatRupiah = (angka: number) => {
 
 export async function GET(req: Request) {
   try {
-    // Extract token from cookies (only server-side)
-    const tokenCookie = cookies().get("authToken");
-    if (!tokenCookie) {
-      return new NextResponse("Token tidak ditemukan", { status: 401 });
-    }
-    const token = tokenCookie.value;
-
-    // Verify the token
-    let decoded;
-    try {
-      decoded = await jwtVerify(token, SECRET);
-    } catch (err) {
-      console.error("Token tidak valid:", err);
-      return new NextResponse("Token tidak valid", { status: 401 });
-    }
-
-    // Extract userId from the decoded token
-    const userId = decoded.payload.id;
-    if (!userId) {
-      return new NextResponse("ID Pengguna tidak ditemukan dalam token", {
-        status: 401,
-      });
-    }
+    const userId = await getAuthenticatedUserId();
+    if (!userId) return new NextResponse("Unauthorized", { status: 401 });
 
     const { searchParams } = new URL(req.url);
     const startDate = searchParams.get("startDate");
@@ -57,13 +31,22 @@ export async function GET(req: Request) {
         status: 400,
       });
     }
+    const parsedStartDate = new Date(startDate);
+    const parsedEndDate = new Date(endDate);
+    if (
+      Number.isNaN(parsedStartDate.getTime()) ||
+      Number.isNaN(parsedEndDate.getTime()) ||
+      parsedStartDate > parsedEndDate
+    ) {
+      return new NextResponse("Rentang tanggal tidak valid", { status: 400 });
+    }
 
     const procurements = await prisma.procurement.findMany({
       where: {
         userId,
         purchaseDate: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
+          gte: parsedStartDate,
+          lte: parsedEndDate,
         },
       },
     });
@@ -92,7 +75,7 @@ export async function GET(req: Request) {
                 : `${item.initialQuantity?.toString()} ${item.unit || ""}`,
             style: "tableData",
           },
-          { text: formatRupiah(item.totalPrice), style: "tableData" },
+          { text: formatRupiah(Number(item.totalPrice)), style: "tableData" },
           { text: item.supplierName || "-", style: "tableData" },
           {
             text: new Date(item.purchaseDate).toLocaleDateString(),
@@ -151,7 +134,7 @@ export async function GET(req: Request) {
         Category: item.category || "-",
         Item: item.itemName || "-",
         Quantity: `${item.initialQuantity} ${item.unit || ""}`,
-        TotalPrice: formatRupiah(item.totalPrice),
+        TotalPrice: formatRupiah(Number(item.totalPrice)),
         Supplier: item.supplierName || "-",
         Date: new Date(item.purchaseDate).toLocaleDateString(),
       }));

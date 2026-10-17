@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Table,
   TableHeader,
@@ -20,18 +20,40 @@ interface ProductionItem {
 }
 
 const ProductionTable = () => {
-  const [data] = useState<ProductionItem[]>([]);
-  const [] = useState(true);
+  const [data, setData] = useState<ProductionItem[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadProductions = useCallback(async () => {
+    try {
+      const response = await fetch("/api/production", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      if (!response.ok) throw new Error("Gagal memuat daftar produksi.");
+      setData(await response.json());
+      setError(null);
+    } catch (loadError) {
+      console.error("Error fetching production data:", loadError);
+      setError("Gagal memuat daftar produksi.");
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadProductions();
+    window.addEventListener("production-created", loadProductions);
+    return () => window.removeEventListener("production-created", loadProductions);
+  }, [loadProductions]);
 
   return (
     <div className="overflow-x-auto">
+      {error && <p role="alert" className="text-red-500">{error}</p>}
       <Table className="min-w-full">
         <TableCaption>Daftar Produksi</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead>Nama Produk</TableHead>
             <TableHead>Tanggal Produksi</TableHead>
-            <TableHead>Jumlah Produksi</TableHead>
+            <TableHead>Stok Tersedia</TableHead>
             <TableHead>Bahan Produksi</TableHead>
           </TableRow>
         </TableHeader>
@@ -40,12 +62,12 @@ const ProductionTable = () => {
             <TableRow key={item.id}>
               <TableCell>{item.productName}</TableCell>
               <TableCell>
-                {new Date(item.productionDate).toLocaleDateString()}
+                {new Date(item.productionDate).toLocaleDateString("id-ID")}
               </TableCell>
               <TableCell>{item.productionQuantity}</TableCell>
               <TableCell>
                 {item.items.map((subItem, index) => (
-                  <div key={index}>
+                  <div key={`${subItem.itemName}-${index}`}>
                     {subItem.itemName} ({subItem.quantity})
                   </div>
                 ))}
