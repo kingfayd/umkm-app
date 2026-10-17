@@ -93,13 +93,13 @@ export async function POST(req: Request) {
     for (const item of items as { id: number; quantity: number }[]) {
       quantities.set(item.id, (quantities.get(item.id) ?? 0) + item.quantity);
     }
-    if ([...quantities.values()].some((quantity) => quantity > 2147483647)) {
+    if (Array.from(quantities.values()).some((quantity) => quantity > 2147483647)) {
       return NextResponse.json(
         { message: "Material quantity is too large" },
         { status: 400 }
       );
     }
-    const orderedItems = [...quantities.entries()].sort(([a], [b]) => a - b);
+    const orderedItems = Array.from(quantities.entries()).sort(([a], [b]) => a - b);
 
     const production = await prisma.$transaction(async (tx) => {
       for (const [procurementId, quantity] of orderedItems) {
